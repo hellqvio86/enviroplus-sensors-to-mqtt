@@ -5,7 +5,7 @@ PROJECT_NAME := enviroplussensorstomqtt
 all: install
 
 venv:
-	uv venv --allow-existing --system-site-packages
+	uv venv --allow-existing --system-site-packages --python python3
 
 install: venv
 	uv pip install ruff

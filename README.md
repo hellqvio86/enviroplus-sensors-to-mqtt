@@ -28,7 +28,7 @@ sudo apt install python3-psutil python3-venv
 Before installing, you must install the required system libraries to compile hardware dependencies and interface with the I2C bus:
 ```bash
 sudo apt-get update
-sudo apt-get install -y python3-dev gcc i2c-tools cmake
+sudo apt-get install -y python3-dev gcc i2c-tools cmake libffi-dev
 ```
 
 ## Installation & Setup

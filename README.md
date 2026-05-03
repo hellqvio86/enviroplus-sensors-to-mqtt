@@ -24,6 +24,13 @@ sudo apt install python3-psutil python3-venv
 - `make` (optional, for simplified build commands)
 - `uv` (modern Python package manager, install with: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
+### System Dependencies
+Before installing, you must install the required system libraries to compile hardware dependencies and interface with the I2C bus:
+```bash
+sudo apt-get update
+sudo apt-get install -y python3-dev gcc i2c-tools
+```
+
 ## Installation & Setup
 
 We recommend using the included `Makefile` to handle creating a virtual environment and installing dependencies safely using `uv`.

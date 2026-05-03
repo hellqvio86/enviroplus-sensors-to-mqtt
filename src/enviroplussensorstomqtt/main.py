@@ -2,10 +2,13 @@
 Main module
 """
 import logging
+import logging.handlers
 import time
 from time import sleep
 
 from setproctitle import setproctitle
+
+import paho.mqtt.client as mqtt
 
 from .args import args_handler
 from .logging import setup_logger
@@ -20,7 +23,7 @@ def main() -> None:
 
     config = args_handler()
 
-    setup_logger(debug=config["debug"], daemon=config["daemon"])
+    setup_logger(debug=config["debug"], log_file=config["log_file"], daemon=config["daemon"])
 
     if config["daemon"]:
         if config["debug"]:
@@ -31,7 +34,9 @@ def main() -> None:
 
     while True:
         before_work = time.time()
-        send_sensor_data(config=config)
+        mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+
+        send_sensor_data(config=config, mqtt_client=mqtt_client)
 
         after_work = time.time()
 

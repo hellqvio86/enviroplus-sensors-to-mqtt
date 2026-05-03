@@ -1,33 +1,36 @@
 """
 Sensor module
 """
-import logging
-import json
 import datetime
-from time import sleep
+import json
+import logging
 from statistics import median
+from time import sleep
 
 from bme280 import BME280
-from pms5003 import PMS5003, ReadTimeoutError
-from enviroplus.noise import Noise
 from enviroplus import gas
+from enviroplus.noise import Noise
+from paho.mqtt.client import Client as MqttClient
+from pms5003 import PMS5003, ReadTimeoutError
 
 try:
     from smbus2 import SMBus
 except ImportError:
     from smbus import SMBus
-import paho.mqtt.client as mqtt
 
 LOGGER = logging.getLogger(__name__)
-MQTT_CLIENT = None
+
 
 def read_pms5003(pms5003: PMS5003) -> dict:
     """
-    Read values PMS5003 and return as dict
+    Read values from PMS5003 particle sensor and return as dict.
+
+    :param pms5003: An initialised PMS5003 sensor instance.
+    :return: Dictionary with pm1, pm25, pm10 keys.
     """
     values = {}
     try:
-        pm_values = pms5003.read()  # int
+        pm_values = pms5003.read()
         values["pm1"] = pm_values.pm_ug_per_m3(1)
         values["pm25"] = pm_values.pm_ug_per_m3(2.5)
         values["pm10"] = pm_values.pm_ug_per_m3(10)
@@ -39,11 +42,22 @@ def read_pms5003(pms5003: PMS5003) -> dict:
         values["pm10"] = pm_values.pm_ug_per_m3(10)
     return values
 
-def send_sensor_data(config: dict, measurements: int = 3) -> None:
+
+def send_sensor_data(
+    *, config: dict, mqtt_client: MqttClient, measurements: int = 3
+) -> None:
     """
-    Read sensor data
+    Read sensor data from Enviro+ and publish to MQTT broker.
+
+    Takes median readings of temperature, humidity, pressure, noise,
+    gas, and particulate matter, then publishes the results to each
+    topic in the config as a JSON-encoded string.
+
+    :param config: Configuration dict with host, port, username, password, topics.
+    :param mqtt_client: An initialised paho MQTT client instance.
+    :param measurements: Number of readings to take the median of.
+    :return: None
     """
-    global MQTT_CLIENT
     msg = {}
 
     host = config["host"]
@@ -56,7 +70,7 @@ def send_sensor_data(config: dict, measurements: int = 3) -> None:
     device_bme280 = BME280(i2c_dev=bus)
     noise = Noise()
 
-    # Take median of three readings
+    # Take median of three readings for temperature
     tmp = []
     for _ in range(0, measurements):
         tmp.append(device_bme280.get_temperature())
@@ -64,7 +78,7 @@ def send_sensor_data(config: dict, measurements: int = 3) -> None:
     msg["temperature"] = median(tmp)
     msg["unit_of_temperature"] = "C"
 
-    # Take median of three readings
+    # Take median of three readings for humidity
     tmp = []
     for _ in range(0, measurements):
         tmp.append(device_bme280.get_humidity())
@@ -72,7 +86,7 @@ def send_sensor_data(config: dict, measurements: int = 3) -> None:
     msg["humidity"] = median(tmp)
     msg["unit_of_humidity"] = "%"
 
-    # Take median of three readings
+    # Take median of three readings for pressure
     tmp = []
     for _ in range(0, measurements):
         tmp.append(device_bme280.get_pressure())
@@ -114,11 +128,11 @@ def send_sensor_data(config: dict, measurements: int = 3) -> None:
     msg["gas_oxidising"] = median(tmp_gas_oxidising)
     msg["unit_of_gas_oxidising"] = "Ohms"
     msg["gas_reducing"] = median(tmp_gas_reducing)
-    msg["unit_of_gas_reducin"] = "Ohms"
+    msg["unit_of_gas_reducing"] = "Ohms"
     msg["gas_nh3"] = median(tmp_gas_nh3)
     msg["unit_of_gas_nh3"] = "Ohms"
 
-    # PMM
+    # Particulate matter
     pms5003 = PMS5003()
     tmp_pm1 = []
     tmp_pm10 = []
@@ -141,21 +155,14 @@ def send_sensor_data(config: dict, measurements: int = 3) -> None:
 
     LOGGER.info(f"Connecting to {uri}")
 
-    if MQTT_CLIENT is None:
-        MQTT_CLIENT = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        MQTT_CLIENT.username_pw_set(username, password=password)
-        MQTT_CLIENT.connect(host, port, 60)
+    mqtt_client.username_pw_set(username, password=password)
+    mqtt_client.connect(host, port, 60)
 
     LOGGER.info(f"Connected to {uri}")
 
     for topic in topics:
         data = json.dumps(msg).encode("utf-8")
         LOGGER.info(f"Publishing msg: {data.decode('utf-8')} to topic: {topic}")
-
-        LOGGER.info(f"Setting will to retain on topic: {topic}")
-        MQTT_CLIENT.will_set(topic, payload=None, qos=0, retain=True)
-
-        LOGGER.info(f"Publishing payload to topic: {topic}")
-        MQTT_CLIENT.publish(topic=topic, payload=data, retain=True)
+        mqtt_client.publish(topic=topic, payload=data, retain=True)
 
     LOGGER.info("messages published")

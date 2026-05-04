@@ -16,7 +16,7 @@ Some system-level dependencies may be required before installing the python pack
 
 ```bash
 curl -sSL https://get.pimoroni.com/enviroplus | bash
-sudo apt install python3-psutil python3-venv
+sudo apt install python3-psutil python3-venv python3-numpy
 ```
 
 ## Requirements

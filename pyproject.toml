@@ -22,7 +22,6 @@ classifiers = [
 ]
 keywords = ["enviroplus", "temperature", "mqtt"]
 dependencies = [
-    "numpy<2.0.0",
     "enviroplus",
     "paho-mqtt",
     "pyyaml",

@@ -21,7 +21,7 @@ jobs:
         python-version: "3.11"
         
     - name: Install system dependencies
-      run: sudo apt-get update && sudo apt-get install -y python3-dev gcc cmake libffi-dev python3-yaml python3-psutil python3-paho-mqtt python3-pytest
+      run: sudo apt-get update && sudo apt-get install -y python3-dev gcc cmake libffi-dev python3-yaml python3-psutil python3-paho-mqtt python3-pytest python3-setproctitle
     - name: Install uv
       uses: astral-sh/setup-uv@v3
       with:

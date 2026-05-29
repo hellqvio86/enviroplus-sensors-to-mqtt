@@ -9,7 +9,6 @@ from time import sleep
 
 from bme280 import BME280
 from enviroplus import gas
-from enviroplus.noise import Noise
 from paho.mqtt.client import Client as MqttClient
 from pms5003 import PMS5003, ReadTimeoutError
 
@@ -68,6 +67,7 @@ def send_sensor_data(
 
     bus = SMBus(1)
     device_bme280 = BME280(i2c_dev=bus)
+    from enviroplus.noise import Noise
     noise = Noise()
 
     # Take median of three readings for temperature

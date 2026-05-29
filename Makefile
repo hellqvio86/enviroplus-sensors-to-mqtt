@@ -7,7 +7,7 @@ venv:
 	uv venv --allow-existing --system-site-packages --python $(PYTHON_BIN)
 install: venv
 	uv pip install ruff
-	uv pip install -e .[tests] --extra-index-url https://www.piwheels.org/simple/
+	uv pip install -e .[tests] --extra-index-url https://www.piwheels.org/simple/ --index-strategy unsafe-best-match
 test: install
 	uv run ruff check .
 	uv run pytest src/tests/

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "enviroplussensorstomqtt"
-version = "0.0.1"
+version = "0.0.2"
 description = "aio library for sending enviroplus sensors data to mqtt"
 readme = "README.md"
 authors = [

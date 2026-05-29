@@ -1,8 +1,10 @@
 PROJECT_NAME := enviroplussensorstomqtt
 .PHONY: all venv install test clean install-service
 all: install
+PYTHON_BIN ?= /usr/bin/python3
+
 venv:
-	uv venv --allow-existing --system-site-packages --python /usr/bin/python3
+	uv venv --allow-existing --system-site-packages --python $(PYTHON_BIN)
 install: venv
 	uv pip install ruff
 	uv pip install -e .[tests] --extra-index-url https://www.piwheels.org/simple/

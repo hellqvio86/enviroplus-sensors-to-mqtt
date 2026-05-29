@@ -28,4 +28,4 @@ jobs:
         version: "latest"
         
     - name: Run Tests & Linting
-      run: make test
+      run: make test PYTHON_BIN=python3

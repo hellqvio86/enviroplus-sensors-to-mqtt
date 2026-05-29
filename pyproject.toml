@@ -26,6 +26,7 @@ dependencies = [
     "paho-mqtt",
     "pyyaml",
     "psutil",
+    "setproctitle",
 ]
 
 [project.urls]

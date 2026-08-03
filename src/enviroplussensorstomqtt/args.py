@@ -1,8 +1,8 @@
 """
 args handler
 """
-import os
 import argparse
+import os
 
 from .config import parse_config
 

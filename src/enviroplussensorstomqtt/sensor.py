@@ -72,7 +72,7 @@ def send_sensor_data(
 
     # Take median of three readings for temperature
     tmp = []
-    for _ in range(0, measurements):
+    for _ in range(measurements):
         tmp.append(device_bme280.get_temperature())
         sleep(1)
     msg["temperature"] = median(tmp)
@@ -80,7 +80,7 @@ def send_sensor_data(
 
     # Take median of three readings for humidity
     tmp = []
-    for _ in range(0, measurements):
+    for _ in range(measurements):
         tmp.append(device_bme280.get_humidity())
         sleep(1)
     msg["humidity"] = median(tmp)
@@ -88,7 +88,7 @@ def send_sensor_data(
 
     # Take median of three readings for pressure
     tmp = []
-    for _ in range(0, measurements):
+    for _ in range(measurements):
         tmp.append(device_bme280.get_pressure())
         sleep(1)
     msg["pressure"] = median(tmp)
@@ -99,7 +99,7 @@ def send_sensor_data(
     tmp_noise_mid = []
     tmp_noise_high = []
     tmp_noise_amp = []
-    for _ in range(0, measurements):
+    for _ in range(measurements):
         noise_low, noise_mid, noise_high, noise_amp = noise.get_noise_profile()
 
         tmp_noise_low.append(noise_low)
@@ -117,7 +117,7 @@ def send_sensor_data(
     tmp_gas_reducing = []
     tmp_gas_nh3 = []
 
-    for _ in range(0, measurements):
+    for _ in range(measurements):
         gas_readings = gas.read_all()
 
         tmp_gas_oxidising.append(gas_readings.oxidising)
@@ -138,7 +138,7 @@ def send_sensor_data(
     tmp_pm10 = []
     tmp_pm25 = []
 
-    for _ in range(0, measurements):
+    for _ in range(measurements):
         pmm_values = read_pms5003(pms5003)
 
         tmp_pm1.append(pmm_values["pm1"])

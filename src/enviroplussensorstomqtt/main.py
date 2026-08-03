@@ -6,13 +6,12 @@ import logging.handlers
 import time
 from time import sleep
 
+import paho.mqtt.client as mqtt
 from setproctitle import setproctitle
 
-import paho.mqtt.client as mqtt
-
 from .args import args_handler
-from .logging import setup_logger
 from .daemonizer import Daemonizer
+from .logging import setup_logger
 from .sensor import send_sensor_data
 
 LOGGER = logging.getLogger(__name__)

@@ -1,13 +1,14 @@
 import logging
 import os
-import sys
 import re
+import sys
+
 import psutil
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Daemonizer(object):
+class Daemonizer:
     """
     Class for Daemonizing a process
     """
@@ -21,7 +22,6 @@ class Daemonizer(object):
         self._pid_file = pid_file
 
         self.run()
-        return
 
     def run(self):
         """
@@ -35,7 +35,6 @@ class Daemonizer(object):
         if self._pid_file:
             self.___setup_pidfile()
 
-        return
 
     def ___setup_pidfile(self):
         """
@@ -46,7 +45,7 @@ class Daemonizer(object):
         _LOGGER.debug(f"Setting up pidfile for PID {pid} to {self._pid_file}")
 
         if os.path.isfile(self._pid_file):
-            pid_desc = open(self._pid_file, "r")
+            pid_desc = open(self._pid_file)
 
             pid = pid_desc.read()
             if re.match(r"^\d+$", pid):
@@ -63,7 +62,6 @@ class Daemonizer(object):
 
         pid_desc.close()
 
-        return
 
     def __redirect(self):
         """
@@ -71,7 +69,7 @@ class Daemonizer(object):
         stdin to /dev/null
         """
         sys.stdin.close()
-        sys.stdin = open("/dev/null", "r")
+        sys.stdin = open("/dev/null")
 
         sys.stdout.close()
         sys.stdout = open("/dev/null", "w")
@@ -79,7 +77,6 @@ class Daemonizer(object):
         sys.stderr.close()
         sys.stderr = open("/dev/null", "w")
 
-        return
 
     def __decouple(self):
         """
@@ -91,7 +88,6 @@ class Daemonizer(object):
         self.__set_new_sid()
         self.__change_file_mode_mask()
 
-        return
 
     def __change_file_mode_mask(self):
         """
@@ -102,7 +98,6 @@ class Daemonizer(object):
 
         os.umask(0)
 
-        return
 
     def __set_new_sid(self):
         """
@@ -112,7 +107,6 @@ class Daemonizer(object):
 
         os.setpgrp()
 
-        return
 
     def __change_directory(self):
         """
@@ -144,7 +138,6 @@ def start():
     worker = Daemonizer()
     worker.run()
 
-    return
 
 
 if __name__ == "__main__":

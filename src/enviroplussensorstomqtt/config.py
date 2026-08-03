@@ -33,7 +33,7 @@ def parse_config(config_file: str = "config.yaml") -> dict:
     if not os.path.isfile(config_file):
         raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
 
-    with open(config_file, "r", encoding="utf-8") as stream:
+    with open(config_file, encoding="utf-8") as stream:
         config = yaml.safe_load(stream)
 
         if config is None:

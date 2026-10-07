@@ -36,8 +36,6 @@ env.bak/
 venv.bak/
 .venv-ruff/
 
-# Packages lock file
-uv.lock
 
 # Pytest / Coverage
 .pytest_cache/

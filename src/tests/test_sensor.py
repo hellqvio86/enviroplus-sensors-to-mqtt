@@ -85,6 +85,39 @@ def test_build_payload_preserves_keys_and_units():
     assert payload["time_utc"] == "2026-10-09T12:00:00.123456"
 
 
+def test_build_payload_rounding():
+    """Test sensor values are sensibly rounded (P1-4)."""
+    unrounded = {
+        "temperature": 21.12645,
+        "humidity": 45.9876,
+        "pressure": 1013.256,
+        "noise_low": 12.3456,
+        "noise_mid": 23.4567,
+        "noise_high": 34.5678,
+        "noise_amp": 5.6789,
+        "gas_oxidising": 150.7,
+        "gas_reducing": 250.3,
+        "gas_nh3": 350.6,
+        "pm1": 2.8,
+        "pm25": 12.4,
+        "pm10": 25.1,
+    }
+    payload = build_payload(unrounded)
+    assert payload["temperature"] == 21.13
+    assert payload["humidity"] == 45.99
+    assert payload["pressure"] == 1013.3
+    assert payload["noise_low"] == 12.35
+    assert payload["noise_mid"] == 23.46
+    assert payload["noise_high"] == 34.57
+    assert payload["noise_amp"] == 5.68
+    assert payload["gas_oxidising"] == 151
+    assert payload["gas_reducing"] == 250
+    assert payload["gas_nh3"] == 351
+    assert payload["pm1"] == 3
+    assert payload["pm25"] == 12
+    assert payload["pm10"] == 25
+
+
 def test_publish_payload(fake_mqtt):
     """Test publish_payload publishes retained JSON to each configured topic."""
     payload = {"temperature": 20.0, "humidity": 40.0}

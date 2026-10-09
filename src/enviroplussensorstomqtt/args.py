@@ -69,6 +69,16 @@ def args_handler(argv: list[str] | None = None, *, config_file: str | None = Non
     if args.topics is not None:
         config["topics"] = [item.strip() for item in args.topics.split(",")]
 
+    # Environment variable fallbacks for secrets and broker config
+    if not config.get("password") and "MQTT_PASSWORD" in os.environ:
+        config["password"] = os.environ["MQTT_PASSWORD"]
+
+    if not config.get("username") and "MQTT_USERNAME" in os.environ:
+        config["username"] = os.environ["MQTT_USERNAME"]
+
+    if not config.get("host") and "MQTT_HOST" in os.environ:
+        config["host"] = os.environ["MQTT_HOST"]
+
     if config.get("debug"):
         debug_config = {k: ("***" if k == "password" and v else v) for k, v in config.items()}
         print(f"config: {debug_config}")

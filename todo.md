@@ -122,7 +122,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** parametrised tests cover missing host, empty topics, bad port, anonymous broker (works), and
   YAML-string vs list topics.
 
-### [ ] P1-3 Password handling: leaks and weak storage `[code]`
+### [x] P1-3 Password handling: leaks and weak storage `[code]`
 - **Where:** `args.py:66-67`, `README.md` (config example), `Makefile`/systemd unit
 - **Problem:** `-D` prints the whole config dict including the **MQTT password** to stdout. Passing
   `--password` on the command line exposes it in `ps`/`/proc/*/cmdline`. README example encourages plaintext
@@ -132,7 +132,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   `EnvironmentFile=`/`LoadCredential=` in the unit. Warn on startup if the config file is group/world readable.
 - **Done when:** test asserts the debug config dump never contains the password; env-var override is tested.
 
-### [ ] P1-4 Fix datetime usage and payload hygiene `[code]`
+### [x] P1-4 Fix datetime usage and payload hygiene `[code]`
 - **Where:** `sensor.py:152`, `sensor.py:73-133`
 - **Problem:** `datetime.utcnow()` is deprecated (3.12) and returns a naive timestamp with microseconds and no
   `Z`/offset, so consumers cannot tell it is UTC. Floats are unrounded (e.g. `23.456789012`). Every message
@@ -171,7 +171,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   "offline" status and disconnect. Use a Last Will and Testament (`will_set`) for crash detection.
 - **Done when:** test sets the stop event and asserts resources are closed and the offline message published.
 
-### [ ] P1-8 Fix the systemd unit `[code]`
+### [x] P1-8 Fix the systemd unit `[code]`
 - **Where:** `systemd/enviroplussensorstomqtt.service`, `Makefile` (`install-service`)
 - **Problem:** Description says "Sense hat sensors to MQTT" and a comment says "Python Demo Service" (wrong
   product). `Restart=always` is declared and then overridden by a later `Restart=on-failure` (duplicate key).
@@ -222,7 +222,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   config. Update Makefile and CI paths accordingly.
 - **Done when:** `pip wheel . --no-deps` contains only `enviroplussensorstomqtt/` and dist-info.
 
-### [ ] P2-2 Declare and bound dependencies correctly `[code]`
+### [x] P2-2 Declare and bound dependencies correctly `[code]`
 - **Where:** `pyproject.toml`
 - **Problem:** `paho-mqtt` has no lower bound but the code requires `>=2.0` (`CallbackAPIVersion`). Directly used
   libs are only transitively installed (`smbus2`, `pimoroni-bme280`, `pms5003`) and `sensor.py` has a
@@ -233,7 +233,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   (`pytest`, `pytest-cov`, `ruff`, type checker), drop `psutil` (P1-1), make `setproctitle` optional or remove.
 - **Done when:** a clean venv install from metadata alone runs tests; `uv lock --check` passes.
 
-### [ ] P2-3 Makefile does not use the lockfile; wasteful `test` target `[code]`
+### [x] P2-3 Makefile does not use the lockfile; wasteful `test` target `[code]`
 - **Where:** `Makefile`
 - **Problem:** `uv.lock` exists and Dependabot manages it, but `uv pip install -e` ignores it, so installs are
   not reproducible. `test` depends on `install`, so every test run reinstalls. `--system-site-packages` +

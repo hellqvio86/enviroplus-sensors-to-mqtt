@@ -23,19 +23,24 @@ classifiers = [
 keywords = ["enviroplus", "temperature", "mqtt"]
 dependencies = [
     "enviroplus",
-    "paho-mqtt",
+    "pimoroni-bme280",
+    "pms5003",
+    "smbus2",
+    "paho-mqtt>=2.0.0,<3.0.0",
     "pyyaml",
     "setproctitle",
 ]
 
 [project.urls]
 Homepage = "https://github.com/hellqvio86/enviroplus-sensors-to-mqtt"
-Download = "https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/archive/v_01.tar.gz"
 
 [project.optional-dependencies]
 tests = [
-    "pyyaml",
     "pytest",
+]
+dev = [
+    "pytest",
+    "ruff",
 ]
 
 [project.scripts]

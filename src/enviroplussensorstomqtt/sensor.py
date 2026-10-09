@@ -129,34 +129,42 @@ def read_sensors(
     return readings
 
 
+def _round_float(val: float | None, digits: int = 2) -> float | None:
+    return round(val, digits) if val is not None else None
+
+
+def _round_int(val: float | None) -> int | None:
+    return int(round(val)) if val is not None else None
+
+
 def build_payload(
     readings: dict[str, float | None],
     timestamp: datetime.datetime | None = None,
 ) -> dict[str, Any]:
-    """Construct MQTT JSON payload preserving all documented keys and units."""
+    """Construct MQTT JSON payload preserving all documented keys and units with sensible rounding."""
     if timestamp is None:
         timestamp = datetime.datetime.now(datetime.timezone.utc)
 
     payload: dict[str, Any] = {
-        "temperature": readings.get("temperature"),
+        "temperature": _round_float(readings.get("temperature"), 2),
         "unit_of_temperature": "C",
-        "humidity": readings.get("humidity"),
+        "humidity": _round_float(readings.get("humidity"), 2),
         "unit_of_humidity": "%",
-        "pressure": readings.get("pressure"),
+        "pressure": _round_float(readings.get("pressure"), 1),
         "unit_of_pressure": "mbar",
-        "noise_low": readings.get("noise_low"),
-        "noise_mid": readings.get("noise_mid"),
-        "noise_high": readings.get("noise_high"),
-        "noise_amp": readings.get("noise_amp"),
-        "gas_oxidising": readings.get("gas_oxidising"),
+        "noise_low": _round_float(readings.get("noise_low"), 2),
+        "noise_mid": _round_float(readings.get("noise_mid"), 2),
+        "noise_high": _round_float(readings.get("noise_high"), 2),
+        "noise_amp": _round_float(readings.get("noise_amp"), 2),
+        "gas_oxidising": _round_int(readings.get("gas_oxidising")),
         "unit_of_gas_oxidising": "Ohms",
-        "gas_reducing": readings.get("gas_reducing"),
+        "gas_reducing": _round_int(readings.get("gas_reducing")),
         "unit_of_gas_reducing": "Ohms",
-        "gas_nh3": readings.get("gas_nh3"),
+        "gas_nh3": _round_int(readings.get("gas_nh3")),
         "unit_of_gas_nh3": "Ohms",
-        "pm1": readings.get("pm1"),
-        "pm10": readings.get("pm10"),
-        "pm25": readings.get("pm25"),
+        "pm1": _round_int(readings.get("pm1")),
+        "pm10": _round_int(readings.get("pm10")),
+        "pm25": _round_int(readings.get("pm25")),
         "time_utc": timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f"),
     }
     return payload

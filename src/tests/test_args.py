@@ -51,3 +51,18 @@ def test_args_handler_debug_redacts_password(capsys, monkeypatch, tmp_path):
     assert config["password"] == "supersecretpassword"
     assert "supersecretpassword" not in captured.out
     assert "***" in captured.out
+
+
+def test_args_handler_env_var_fallbacks(monkeypatch, tmp_path):
+    """Test MQTT_PASSWORD, MQTT_USERNAME, and MQTT_HOST environment variable fallbacks (P1-3)."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("MQTT_PASSWORD", "envsecret")
+    monkeypatch.setenv("MQTT_USERNAME", "envuser")
+    monkeypatch.setenv("MQTT_HOST", "broker.env")
+
+    config = args_handler([])
+
+    assert config["password"] == "envsecret"
+    assert config["username"] == "envuser"
+    assert config["host"] == "broker.env"
+

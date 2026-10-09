@@ -129,13 +129,15 @@ class FakeMQTTClient:
         except Exception:
             data = raw_payload
 
-        self.published_messages.append({
-            "topic": topic,
-            "raw": raw_payload,
-            "data": data,
-            "qos": qos,
-            "retain": retain,
-        })
+        self.published_messages.append(
+            {
+                "topic": topic,
+                "raw": raw_payload,
+                "data": data,
+                "qos": qos,
+                "retain": retain,
+            }
+        )
         return FakeMessageInfo(rc=self.rc_for_publish)
 
 

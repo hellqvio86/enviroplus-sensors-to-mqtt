@@ -1,5 +1,6 @@
 [Unit]
 Description=Enviro+ sensors to MQTT
+Documentation=https://github.com/hellqvio86/enviroplus-sensors-to-mqtt
 After=network-online.target
 Wants=network-online.target
 
@@ -8,15 +9,19 @@ Type=simple
 ExecStart=/usr/local/bin/enviroplussensorstomqtt
 Restart=on-failure
 RestartSec=5s
+WatchdogSec=180
 Environment=PYTHONUNBUFFERED=1
 StandardOutput=journal
 StandardError=journal
 
-# Basic security hardening
-NoNewPrivileges=yes
+# Security hardening
+NoNewPrivileges=true
 ProtectSystem=strict
-ProtectHome=read-only
-PrivateTmp=yes
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictRealtime=true
 
 [Install]
 WantedBy=multi-user.target

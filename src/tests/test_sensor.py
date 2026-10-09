@@ -223,6 +223,3 @@ def test_read_sensors_ltr559_disabled_or_failing(fake_hardware, caplog):
     readings_disabled = read_sensors(fake_hardware, measurements=1, sample_delay=0, enable_ltr559=False)
     assert "lux" not in readings_disabled
     assert "proximity" not in readings_disabled
-
-
-

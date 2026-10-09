@@ -27,9 +27,7 @@ def setup_logger(
 
     if log_file:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(
-                log_file, "a", maxBytes=3 * 10**6, backupCount=10
-            )
+            file_handler = logging.handlers.RotatingFileHandler(log_file, "a", maxBytes=3 * 10**6, backupCount=10)
             file_handler.setFormatter(formatter)
             root.addHandler(file_handler)
         except OSError as exc:

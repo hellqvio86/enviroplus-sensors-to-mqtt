@@ -58,6 +58,10 @@ def run_service(
 
     LOGGER.info("Starting Enviroplus Sensors to MQTT (interval: %ss, measurements: %s)", interval, measurements)
 
+    from .sd_notify import notify_ready, notify_stopping, notify_watchdog
+
+    notify_ready()
+    per_metric = bool(config.get("per_metric_topics", False))
     cycle_count = 0
     error_count = 0
     service_start = time.monotonic()
@@ -78,7 +82,7 @@ def run_service(
                 payload = build_payload(readings)
                 qos = int(config.get("qos", 1))
                 retain = bool(config.get("retain", True))
-                publish_payload(client, topics, payload, qos=qos, retain=retain)
+                publish_payload(client, topics, payload, qos=qos, retain=retain, per_metric_topics=per_metric)
 
                 # Observability heartbeat (P3-5)
                 for topic in topics:
@@ -89,6 +93,7 @@ def run_service(
                         "errors": error_count,
                     }
                     client.publish(f"{topic}/status", json.dumps(status_payload), qos=qos, retain=True)
+                notify_watchdog()
             except Exception as exc:
                 error_count += 1
                 LOGGER.exception("Unexpected error in sensor cycle: %s", exc)
@@ -107,6 +112,7 @@ def run_service(
 
     finally:
         LOGGER.info("Shutting down service...")
+        notify_stopping()
         try:
             disconnect_mqtt_client(client, topics)
         except Exception as exc:

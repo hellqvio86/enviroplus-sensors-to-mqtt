@@ -78,7 +78,16 @@ Configuration is loaded and merged with the following precedence (highest to low
 | `measurements` | `--measurements` | - | `3` | Number of samples to median per cycle |
 | `temperature_offset` | `--temperature_offset` | - | `0.0` | °C offset to subtract for board self-heating |
 | `enable_ltr559` | `--disable-ltr559` | - | `true` | Enable/disable LTR559 light and proximity sensor |
-| `client_id` | - | - | `None` | Optional MQTT client ID |
+| `client_id` | `--client_id` | - | `None` | Optional MQTT client ID |
+| `tls` | `--tls` / `--no-tls` | - | `false` | Enable TLS encryption for MQTT broker connection |
+| `tls_ca_certs` | `--tls_ca_certs` | - | `None` | Path to CA certificates file for TLS verification |
+| `tls_certfile` | `--tls_certfile` | - | `None` | Path to client certificate file for mutual TLS |
+| `tls_keyfile` | `--tls_keyfile` | - | `None` | Path to client private key file for mutual TLS |
+| `tls_insecure` | `--tls_insecure` / `--no-tls_insecure` | - | `false` | Disable server certificate hostname verification |
+| `per_metric_topics` | `--per_metric_topics` / `--no-per_metric_topics` | - | `false` | Also publish individual values to `{topic}/{metric}` subtopics |
+| `ha_discovery` | `--ha_discovery` / `--no-ha_discovery` | - | `false` | Enable Home Assistant MQTT Discovery registration |
+| `ha_discovery_prefix` | `--ha_discovery_prefix` | - | `homeassistant` | MQTT topic prefix for Home Assistant discovery |
+| `device_id` | `--device_id` | - | `enviroplus` | Unique device identifier for Home Assistant discovery |
 | `qos` | - | - | `1` | MQTT QoS level (0, 1, or 2) |
 | `retain` | - | - | `true` | Retain published MQTT messages |
 | `debug` | `-D`, `--debug` | - | `false` | Enable verbose debug logging |

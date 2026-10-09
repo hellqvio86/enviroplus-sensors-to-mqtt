@@ -27,6 +27,15 @@ class AppConfig:
     measurements: int = 3
     temperature_offset: float = 0.0
     enable_ltr559: bool = True
+    tls: bool = False
+    tls_ca_certs: str | None = None
+    tls_certfile: str | None = None
+    tls_keyfile: str | None = None
+    tls_insecure: bool = False
+    per_metric_topics: bool = False
+    ha_discovery: bool = False
+    ha_discovery_prefix: str = "homeassistant"
+    device_id: str = "enviroplus"
 
     def __post_init__(self) -> None:
         self.validate()
@@ -104,6 +113,15 @@ class AppConfig:
             "measurements": self.measurements,
             "temperature_offset": self.temperature_offset,
             "enable_ltr559": self.enable_ltr559,
+            "tls": self.tls,
+            "tls_ca_certs": self.tls_ca_certs,
+            "tls_certfile": self.tls_certfile,
+            "tls_keyfile": self.tls_keyfile,
+            "tls_insecure": self.tls_insecure,
+            "per_metric_topics": self.per_metric_topics,
+            "ha_discovery": self.ha_discovery,
+            "ha_discovery_prefix": self.ha_discovery_prefix,
+            "device_id": self.device_id,
         }
 
 
@@ -120,6 +138,15 @@ def get_default_config() -> dict[str, Any]:
         "measurements": 3,
         "temperature_offset": 0.0,
         "enable_ltr559": True,
+        "tls": False,
+        "tls_ca_certs": None,
+        "tls_certfile": None,
+        "tls_keyfile": None,
+        "tls_insecure": False,
+        "per_metric_topics": False,
+        "ha_discovery": False,
+        "ha_discovery_prefix": "homeassistant",
+        "device_id": "enviroplus",
     }
 
 
@@ -147,16 +174,8 @@ def parse_config(config_file: str | None = None) -> dict[str, Any]:
             if loaded and isinstance(loaded, dict):
                 config.update(loaded)
 
-    config.setdefault("debug", False)
-    config.setdefault("port", 1883)
-    config.setdefault("client_id", None)
-    config.setdefault("qos", 1)
-    config.setdefault("retain", True)
-    config.setdefault("log_file", None)
-    config.setdefault("interval", 60.0)
-    config.setdefault("measurements", 3)
-    config.setdefault("temperature_offset", 0.0)
-    config.setdefault("enable_ltr559", True)
+    for k, v in get_default_config().items():
+        config.setdefault(k, v)
 
     # Normalize topics if given as comma-separated string in YAML
     if isinstance(config.get("topics"), str):
@@ -187,4 +206,13 @@ def validate_config(config: dict[str, Any]) -> AppConfig:
         measurements=config.get("measurements", 3),
         temperature_offset=config.get("temperature_offset", 0.0),
         enable_ltr559=bool(config.get("enable_ltr559", True)),
+        tls=bool(config.get("tls", False)),
+        tls_ca_certs=config.get("tls_ca_certs"),
+        tls_certfile=config.get("tls_certfile"),
+        tls_keyfile=config.get("tls_keyfile"),
+        tls_insecure=bool(config.get("tls_insecure", False)),
+        per_metric_topics=bool(config.get("per_metric_topics", False)),
+        ha_discovery=bool(config.get("ha_discovery", False)),
+        ha_discovery_prefix=str(config.get("ha_discovery_prefix", "homeassistant")),
+        device_id=str(config.get("device_id", "enviroplus")),
     )

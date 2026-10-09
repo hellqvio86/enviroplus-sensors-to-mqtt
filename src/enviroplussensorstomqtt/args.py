@@ -42,6 +42,20 @@ def args_handler(
         required=False,
         help="Temperature offset in °C to subtract/compensate for self-heating",
     )
+    parser.add_argument("--client_id", type=str, required=False, help="MQTT client ID")
+    parser.add_argument("--tls", action=argparse.BooleanOptionalAction, default=None, help="Enable TLS")
+    parser.add_argument("--tls_ca_certs", type=str, required=False, help="Path to CA certificate")
+    parser.add_argument("--tls_certfile", type=str, required=False, help="Path to client certificate")
+    parser.add_argument("--tls_keyfile", type=str, required=False, help="Path to client key")
+    parser.add_argument("--tls_insecure", action=argparse.BooleanOptionalAction, default=None, help="Skip TLS verify")
+    parser.add_argument(
+        "--per_metric_topics", action=argparse.BooleanOptionalAction, default=None, help="Publish per-metric"
+    )
+    parser.add_argument(
+        "--ha_discovery", action=argparse.BooleanOptionalAction, default=None, help="Enable HA discovery"
+    )
+    parser.add_argument("--ha_discovery_prefix", type=str, required=False, help="HA discovery prefix")
+    parser.add_argument("--device_id", type=str, required=False, help="Device ID for HA discovery")
     parser.add_argument(
         "--disable-ltr559",
         action="store_true",
@@ -93,6 +107,36 @@ def args_handler(
 
     if args.topics is not None:
         config["topics"] = [item.strip() for item in args.topics.split(",") if item.strip()]
+
+    if args.client_id is not None:
+        config["client_id"] = args.client_id
+
+    if args.tls is not None:
+        config["tls"] = args.tls
+
+    if args.tls_ca_certs is not None:
+        config["tls_ca_certs"] = args.tls_ca_certs
+
+    if args.tls_certfile is not None:
+        config["tls_certfile"] = args.tls_certfile
+
+    if args.tls_keyfile is not None:
+        config["tls_keyfile"] = args.tls_keyfile
+
+    if args.tls_insecure is not None:
+        config["tls_insecure"] = args.tls_insecure
+
+    if args.per_metric_topics is not None:
+        config["per_metric_topics"] = args.per_metric_topics
+
+    if args.ha_discovery is not None:
+        config["ha_discovery"] = args.ha_discovery
+
+    if args.ha_discovery_prefix is not None:
+        config["ha_discovery_prefix"] = args.ha_discovery_prefix
+
+    if args.device_id is not None:
+        config["device_id"] = args.device_id
 
     # Environment variable fallbacks for secrets and broker config
     if not config.get("password") and "MQTT_PASSWORD" in os.environ:

@@ -1,19 +1,27 @@
 """Args handler module."""
 
+from __future__ import annotations
+
 import argparse
 import os
 from typing import Any
 
-from .config import parse_config
+from .config import parse_config, validate_config
 
 
-def args_handler(argv: list[str] | None = None, *, config_file: str | None = None) -> dict[str, Any]:
+def args_handler(
+    argv: list[str] | None = None,
+    *,
+    config_file: str | None = None,
+    validate: bool = False,
+) -> dict[str, Any]:
     """
     Function for reading arguments and config file.
 
     Args:
         argv (list[str], optional): Arguments list to parse. Defaults to sys.argv[1:].
         config_file (str, optional): Default config file to use if not overridden by CLI.
+        validate (bool, optional): Whether to validate config immediately against AppConfig schema.
 
     Returns:
         dict: Parsed and merged configuration dictionary.
@@ -26,8 +34,14 @@ def args_handler(argv: list[str] | None = None, *, config_file: str | None = Non
     parser.add_argument("--topics", type=str, required=False, help="Comma-separated MQTT topics")
     parser.add_argument("--config_file", type=str, required=False, help="Path to YAML configuration file")
     parser.add_argument("--log_file", type=str, required=False, help="Path to log file")
-    parser.add_argument("--interval", type=int, required=False, help="Interval in seconds between cycles")
+    parser.add_argument("--interval", type=float, required=False, help="Interval in seconds between cycles")
     parser.add_argument("--measurements", type=int, required=False, help="Number of samples to average per cycle")
+    parser.add_argument(
+        "--temperature_offset",
+        type=float,
+        required=False,
+        help="Temperature offset in °C to subtract/compensate for self-heating",
+    )
     parser.add_argument("-D", "--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args(argv)
 
@@ -66,8 +80,11 @@ def args_handler(argv: list[str] | None = None, *, config_file: str | None = Non
     if args.measurements is not None:
         config["measurements"] = args.measurements
 
+    if args.temperature_offset is not None:
+        config["temperature_offset"] = args.temperature_offset
+
     if args.topics is not None:
-        config["topics"] = [item.strip() for item in args.topics.split(",")]
+        config["topics"] = [item.strip() for item in args.topics.split(",") if item.strip()]
 
     # Environment variable fallbacks for secrets and broker config
     if not config.get("password") and "MQTT_PASSWORD" in os.environ:
@@ -78,6 +95,11 @@ def args_handler(argv: list[str] | None = None, *, config_file: str | None = Non
 
     if not config.get("host") and "MQTT_HOST" in os.environ:
         config["host"] = os.environ["MQTT_HOST"]
+
+    # Validate configuration if requested
+    if validate:
+        app_config = validate_config(config)
+        config = app_config.to_dict()
 
     if config.get("debug"):
         debug_config = {k: ("***" if k == "password" and v else v) for k, v in config.items()}

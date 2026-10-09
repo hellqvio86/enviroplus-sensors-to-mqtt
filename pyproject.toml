@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "enviroplussensorstomqtt"
 version = "0.0.2"
-description = "aio library for sending enviroplus sensors data to mqtt"
+description = "Publish Pimoroni Enviro+ environmental sensor data to MQTT"
 readme = "README.md"
 authors = [
   { name = "Olof Hellqvist", email = "olof.hellqvist@gmail.com" }
@@ -13,14 +13,16 @@ authors = [
 license = { text = "MIT" }
 requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Topic :: Software Development :: Build Tools",
+    "Topic :: Home Automation",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
-keywords = ["enviroplus", "temperature", "mqtt"]
+keywords = ["enviroplus", "temperature", "humidity", "pressure", "mqtt", "raspberry-pi"]
 dependencies = [
     "enviroplus",
     "pimoroni-bme280",
@@ -59,6 +61,8 @@ target-version = "py311"
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W", "I", "B", "UP", "RUF"]
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+"src/tests/*" = ["S101"]

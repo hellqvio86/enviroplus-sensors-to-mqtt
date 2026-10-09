@@ -64,7 +64,8 @@ def run_service(
             cycle_count += 1
 
             try:
-                readings = read_sensors(hw, measurements=measurements)
+                offset = float(config.get("temperature_offset", 0.0))
+                readings = read_sensors(hw, measurements=measurements, temperature_offset=offset)
                 payload = build_payload(readings)
                 publish_payload(client, topics, payload)
             except Exception as exc:
@@ -99,7 +100,11 @@ def run_service(
 def main() -> None:
     """CLI entrypoint."""
     setproctitle("enviroplussensorstomqtt")
-    config = args_handler()
+    try:
+        config = args_handler(validate=True)
+    except ValueError as exc:
+        LOGGER.error("%s", exc)
+        raise SystemExit(1) from None
     setup_logger(debug=config.get("debug", False), log_file=config.get("log_file"))
     run_service(config)
 

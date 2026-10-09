@@ -5,114 +5,144 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-A python utility to publish data from Enviro+ sensors to an MQTT broker.
+A robust Python service that reads environmental sensor data from a Pimoroni Enviro+ HAT on a Raspberry Pi and publishes structured JSON payloads to an MQTT broker.
 
-## Read-Only Filesystem
-If running on a read-only filesystem, refer to [this guide](https://medium.com/swlh/make-your-raspberry-pi-file-system-read-only-raspbian-buster-c558694de79) for setup instructions.
+---
 
-## System Dependencies
+## Features
 
-Some system-level dependencies may be required before installing the python packages:
+- **Sensors supported**: BME280 (temperature, humidity, pressure), MICS6814 (reducing, oxidising, NH3 gas resistance), MEMS microphone (noise low/mid/high/amp), and PMS5003 particulate matter sensor (PM1, PM2.5, PM10).
+- **Fault-isolated sampling**: Transient I2C/serial/sensor errors are handled cleanly per sensor group rather than crashing the service.
+- **Self-heating compensation**: Configurable temperature offset (`--temperature_offset` / `temperature_offset`).
+- **Resilient MQTT loop**: Long-lived connection with automatic reconnect, error-checked publishing, and Last Will and Testament (LWT) offline messaging.
+- **systemd-first architecture**: Direct console logging formatted for `journald` with graceful shutdown on `SIGTERM` / `SIGINT`.
+- **Environment variable secrets**: Secure credential loading via `MQTT_HOST`, `MQTT_USERNAME`, and `MQTT_PASSWORD`.
 
-```bash
-curl -sSL https://get.pimoroni.com/enviroplus | bash
-sudo apt install python3-venv python3-numpy
-```
+---
 
-## Requirements
+## Hardware & System Prerequisites (Raspberry Pi)
 
-- `make` (optional, for simplified build commands)
-- `uv` (modern Python package manager, install with: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+Ensure the required Raspberry Pi hardware interfaces are enabled via `raspi-config`:
+- **I2C**: Enabled (`Interface Options -> I2C`)
+- **SPI**: Enabled (`Interface Options -> SPI`)
+- **Serial Port**: Hardware serial enabled, serial console disabled (`Interface Options -> Serial Port`)
+- **Microphone**: If using the MEMS noise sensor, ensure the microphone audio overlay is enabled in `/boot/config.txt`.
 
-### System Dependencies
-Before installing, you must install the required system libraries to compile hardware dependencies and interface with the I2C bus:
+Install system libraries required by the sensor hardware stacks:
 ```bash
 sudo apt-get update
 sudo apt-get install -y python3-dev gcc i2c-tools cmake libffi-dev libopenblas0
 ```
 
+---
+
 ## Installation & Setup
 
-We recommend using the included `Makefile` to handle creating a virtual environment and installing dependencies safely using `uv`.
-
-### 1. Local Development / Virtual Environment
-
-To set up a local virtual environment (`.venv`) and install dependencies:
+We recommend using [uv](https://github.com/astral-sh/uv) for fast, deterministic installs:
 
 ```bash
+# Clone the repository
+git clone https://github.com/hellqvio86/enviroplus-sensors-to-mqtt.git
+cd enviroplus-sensors-to-mqtt
+
+# Install dependencies into local virtualenv
 make install
 ```
 
-You can then run the tool directly from the virtual environment:
-```bash
-uv run enviroplussensorstomqtt
-```
-Alternatively, activate the venv directly and run it:
-```bash
-source .venv/bin/activate
-enviroplussensorstomqtt
-```
-
-### 2. Running Tests & Linting
-
-To run the test suite and `ruff` linting using `uv`:
+### Running Tests & Linting
 
 ```bash
 make test
 ```
 
+---
+
 ## Configuration
 
-The application can be configured via command-line arguments or a YAML configuration file. It will look for a config file in the following order:
-1. File specified by `--config_file`
-2. `/etc/enviroplussensorstomqtt.yaml`
-3. `config.yaml` in the current directory
+Configuration is loaded and merged with the following precedence (highest to lowest):
+1. Command-line flags
+2. Environment variables (`MQTT_HOST`, `MQTT_USERNAME`, `MQTT_PASSWORD`)
+3. YAML config file (`--config_file <path>`, `/etc/enviroplussensorstomqtt.yaml`, or `./config.yaml`)
+4. Built-in defaults
+
+### Configuration Reference
+
+| Option | CLI Flag | Environment Variable | Default | Description |
+|---|---|---|---|---|
+| `host` | `--host` | `MQTT_HOST` | *(required)* | MQTT broker hostname or IP |
+| `port` | `--port` | - | `1883` | MQTT broker port (1-65535) |
+| `topics` | `--topics` | - | *(required)* | Comma-separated list of MQTT topics |
+| `username` | `--username` | `MQTT_USERNAME` | `None` | MQTT broker username (optional) |
+| `password` | `--password` | `MQTT_PASSWORD` | `None` | MQTT broker password (optional) |
+| `interval` | `--interval` | - | `60.0` | Seconds between measurement cycles |
+| `measurements` | `--measurements` | - | `3` | Number of samples to median per cycle |
+| `temperature_offset` | `--temperature_offset` | - | `0.0` | °C offset to subtract for board self-heating |
+| `debug` | `-D`, `--debug` | - | `false` | Enable verbose debug logging |
+| `log_file` | `--log_file` | - | `None` | Optional file path for file logging |
 
 ### YAML Configuration Example
 
+Save as `/etc/enviroplussensorstomqtt.yaml` or `config.yaml` with permissions `chmod 600 config.yaml`:
+
 ```yaml
-host: "192.168.1.100"
+host: "192.168.1.50"
 port: 1883
 username: "mqtt_user"
-password: "mqtt_password"
+password: "secure_password"
 topics:
-  - "home/sensors/enviroplus"
+  - "home/sensors/livingroom/enviroplus"
+interval: 60.0
+measurements: 3
+temperature_offset: 2.5
 debug: false
 ```
 
-### Command Line Arguments
+---
 
-You can override any YAML configuration via CLI flags:
-- `--host`: MQTT broker host
-- `--port`: MQTT broker port (default 1883)
-- `--username`: MQTT username
-- `--password`: MQTT password
-- `--topics`: Comma-separated list of topics
-- `--config_file`: Path to a custom YAML config file
-- `--log_file`: Path to store the log file
-- `-D, --debug`: Enable debug logging
+## Example MQTT Payload
 
-## Systemd Service
+Readings are published as a retained JSON object:
 
-To install this application as a background service managed by `systemd`, run:
+```json
+{
+  "temperature": 21.45,
+  "unit_of_temperature": "C",
+  "humidity": 45.20,
+  "unit_of_humidity": "%",
+  "pressure": 1013.2,
+  "unit_of_pressure": "mbar",
+  "noise_low": 0.12,
+  "noise_mid": 0.08,
+  "noise_high": 0.05,
+  "noise_amp": 0.02,
+  "gas_oxidising": 182500,
+  "unit_of_gas_oxidising": "Ohms",
+  "gas_reducing": 245000,
+  "unit_of_gas_reducing": "Ohms",
+  "gas_nh3": 312000,
+  "unit_of_gas_nh3": "Ohms",
+  "pm1": 2,
+  "pm25": 6,
+  "pm10": 9,
+  "time_utc": "2026-10-09T08:30:00.000000"
+}
+```
+
+---
+
+## Systemd Service Installation
+
+To install as a background service:
 
 ```bash
 make install-service
-```
-
-This command will:
-1. Create a wrapper script in `/usr/local/bin/enviroplussensorstomqtt` that natively targets the `.venv` isolated environment in this folder.
-2. Copy the systemd unit file from `systemd/enviroplussensorstomqtt.service` to `/etc/systemd/system/`.
-3. Reload the systemd daemon.
-
-After installation, you can enable and start the service:
-
-```bash
 sudo systemctl enable enviroplussensorstomqtt
 sudo systemctl start enviroplussensorstomqtt
 ```
 
-To view logs:
+Check status and follow logs:
+
 ```bash
+sudo systemctl status enviroplussensorstomqtt
 journalctl -u enviroplussensorstomqtt -f
 ```

@@ -110,7 +110,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   you want), drop `psutil`. Document systemd as the supported way to run in the background.
 - **Done when:** no references remain, `psutil` is removed from dependencies and `uv.lock`, README updated.
 
-### [ ] P1-2 Validate configuration; fail fast with clear errors `[code]`
+### [x] P1-2 Validate configuration; fail fast with clear errors `[code]`
 - **Where:** `sensor.py:62-66`, `args.py:21,48-49`, `config.py`
 - **Problem:** Required keys (`host`, `topics`, and `username`/`password`) are read with `config[...]` deep inside
   the sensor function, producing a bare `KeyError` mid-run. Anonymous brokers (no credentials) are impossible.
@@ -143,7 +143,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** schema documented in README; test builds a payload from fake readings and asserts keys, types,
   rounding and an offset-aware timestamp.
 
-### [ ] P1-5 Sensor accuracy: temperature self-heating and warm-up `[code]` `[hw]`
+### [x] P1-5 Sensor accuracy: temperature self-heating and warm-up `[code]` `[hw]`
 - **Where:** `sensor.py:73-79, 115-133, 136-150`
 - **Problem:** BME280 temperature on an Enviro+ reads several °C high because of CPU/board heat; there is no
   compensation or configurable offset, and humidity (derived from the same temperature) is therefore also
@@ -244,7 +244,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   with `install -m 0755` from a template file.
 - **Done when:** `make test` does not reinstall when nothing changed; install is reproducible from `uv.lock`.
 
-### [ ] P2-4 CI improvements `[code]`
+### [x] P2-4 CI improvements `[code]`
 - **Where:** `.github/workflows/ci.yml`
 - **Problem:** Single Python version (3.11 only) although `>=3.11` is claimed; apt-installed `python3-*`
   packages are installed for the system interpreter but tests run in a different venv (largely redundant);
@@ -254,7 +254,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   coverage threshold, `python -m build` + `twine check`, and wheel-contents assertion.
 - **Done when:** CI is green on the matrix and fails on a deliberately broken wheel/test.
 
-### [ ] P2-5 Tighten linting and add type checking `[code]`
+### [x] P2-5 Tighten linting and add type checking `[code]`
 - **Where:** `pyproject.toml` (`[tool.ruff.lint]`), source files
 - **Problem:** Rules are only `E,F,W,I`. Missing `B` (bugbear), `UP` (would flag `utcnow`, implicit Optional),
   `S` (security), `SIM`, `N`, `PTH`, `RUF`, `ARG`. `x: str = None` annotations are wrong. Docstring styles
@@ -263,7 +263,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   `pre-commit` config (ruff, ruff-format, end-of-file, mixed-line-ending).
 - **Done when:** `ruff check .` and the type checker are clean in CI.
 
-### [ ] P2-6 README gaps and inaccuracies `[code]`
+### [x] P2-6 README gaps and inaccuracies `[code]`
 - **Where:** `README.md`
 - **Problem:** Documents two overlapping "System Dependencies" sections; omits mandatory Pi setup (enable I2C,
   SPI, serial/UART for the PMS5003, and the microphone overlay for noise); does not document the MQTT payload,
@@ -276,7 +276,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** every CLI flag and config key in code appears in README (add a test that diffs argparse
   options against the README).
 
-### [ ] P2-7 Metadata and housekeeping `[code]`
+### [x] P2-7 Metadata and housekeeping `[code]`
 - **Where:** `pyproject.toml`, `.gitignore`, repo root
 - **Problem:** Description says "aio library" but the code is a synchronous application. Classifier
   `Topic :: Software Development :: Build Tools` is wrong (use e.g. `Topic :: Home Automation`). `Download` URL

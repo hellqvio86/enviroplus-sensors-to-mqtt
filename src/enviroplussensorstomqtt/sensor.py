@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import datetime
 import logging
+from collections.abc import Callable
 from statistics import median
 from time import sleep
-from typing import Any, Callable
+from typing import Any
 
 from paho.mqtt.client import Client as MqttClient
 
@@ -14,6 +15,33 @@ from .hardware import EnviroPlusHardware, HardwareInterface
 from .mqtt import create_mqtt_client, publish_payload
 
 LOGGER = logging.getLogger(__name__)
+
+
+def compensate_temperature(
+    raw_temperature: float | None,
+    offset: float = 0.0,
+    cpu_temperature: float | None = None,
+    factor: float = 1.2,
+) -> float | None:
+    """
+    Apply temperature compensation to counteract Enviro+ board self-heating.
+
+    If cpu_temperature is provided, uses Pimoroni's compensation formula:
+        comp_temp = raw_temp - ((cpu_temp - raw_temp) / factor) - offset
+    Otherwise:
+        comp_temp = raw_temp - offset
+
+    Returns:
+        Compensated temperature or None if raw_temperature is None.
+    """
+    if raw_temperature is None:
+        return None
+
+    temp = float(raw_temperature)
+    if cpu_temperature is not None:
+        temp = temp - ((cpu_temperature - temp) / factor)
+
+    return temp - offset
 
 
 def sample_median(func: Callable[[], float], n: int = 3, delay: float = 1.0) -> float:
@@ -30,6 +58,7 @@ def read_sensors(
     hardware: HardwareInterface,
     measurements: int = 3,
     sample_delay: float = 1.0,
+    temperature_offset: float = 0.0,
 ) -> dict[str, float | None]:
     """
     Read all sensor groups from hardware with fault isolation.
@@ -109,7 +138,8 @@ def read_sensors(
         if i < measurements - 1 and sample_delay > 0:
             sleep(sample_delay)
 
-    readings["temperature"] = median(temps) if temps else None
+    raw_temp = median(temps) if temps else None
+    readings["temperature"] = compensate_temperature(raw_temp, offset=temperature_offset)
     readings["humidity"] = median(hums) if hums else None
     readings["pressure"] = median(press) if press else None
 
@@ -134,7 +164,7 @@ def _round_float(val: float | None, digits: int = 2) -> float | None:
 
 
 def _round_int(val: float | None) -> int | None:
-    return int(round(val)) if val is not None else None
+    return round(val) if val is not None else None
 
 
 def build_payload(
@@ -143,7 +173,7 @@ def build_payload(
 ) -> dict[str, Any]:
     """Construct MQTT JSON payload preserving all documented keys and units with sensible rounding."""
     if timestamp is None:
-        timestamp = datetime.datetime.now(datetime.timezone.utc)
+        timestamp = datetime.datetime.now(datetime.UTC)
 
     payload: dict[str, Any] = {
         "temperature": _round_float(readings.get("temperature"), 2),
@@ -180,6 +210,7 @@ def send_sensor_data(
 ) -> dict[str, Any]:
     """Read sensor data from Enviro+ hardware and publish to MQTT."""
     topics = config.get("topics", [])
+    offset = float(config.get("temperature_offset", 0.0))
 
     if mqtt_client is not None:
         client = mqtt_client
@@ -195,7 +226,12 @@ def send_sensor_data(
         client = create_mqtt_client(config)
 
     hw = hardware if hardware is not None else EnviroPlusHardware()
-    readings = read_sensors(hw, measurements=measurements, sample_delay=sample_delay)
+    readings = read_sensors(
+        hw,
+        measurements=measurements,
+        sample_delay=sample_delay,
+        temperature_offset=offset,
+    )
     payload = build_payload(readings)
 
     publish_payload(client, topics, payload)

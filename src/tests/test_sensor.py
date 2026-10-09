@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import datetime
 
+import pytest
+
 from enviroplussensorstomqtt.sensor import (
     build_payload,
     publish_payload,
@@ -56,7 +58,7 @@ def test_build_payload_preserves_keys_and_units():
         "pm25": 5.0,
         "pm10": 10.0,
     }
-    fixed_time = datetime.datetime(2026, 10, 9, 12, 0, 0, 123456, tzinfo=datetime.timezone.utc)
+    fixed_time = datetime.datetime(2026, 10, 9, 12, 0, 0, 123456, tzinfo=datetime.UTC)
     payload = build_payload(dummy_readings, timestamp=fixed_time)
 
     # Values
@@ -179,4 +181,19 @@ def test_read_sensors_failing_gas_isolated(fake_hardware, caplog):
     assert readings["gas_nh3"] is None
     assert readings["temperature"] == 22.5
     assert "Failed to read gas concentrations" in caplog.text
+
+
+def test_compensate_temperature_offset_and_cpu():
+    """Test temperature offset and CPU-based compensation (P1-5)."""
+    from enviroplussensorstomqtt.sensor import compensate_temperature
+
+    assert compensate_temperature(None) is None
+    # Offset subtraction: 25.0 - 2.5 = 22.5
+    assert compensate_temperature(25.0, offset=2.5) == 22.5
+    # CPU temperature self-heating compensation:
+    # raw = 28.0, cpu = 40.0, factor = 1.2 => 28 - ((40 - 28) / 1.2) = 28 - 10 = 18.0
+    assert pytest.approx(compensate_temperature(28.0, cpu_temperature=40.0, factor=1.2), 0.01) == 18.0
+    # Combined with offset
+    assert pytest.approx(compensate_temperature(28.0, offset=1.0, cpu_temperature=40.0, factor=1.2), 0.01) == 17.0
+
 

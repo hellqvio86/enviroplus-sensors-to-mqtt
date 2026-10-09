@@ -36,7 +36,6 @@ env.bak/
 venv.bak/
 .venv-ruff/
 
-
 # Pytest / Coverage
 .pytest_cache/
 .coverage

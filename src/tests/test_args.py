@@ -33,7 +33,7 @@ def test_args_handler_explicit_missing_config_file_raises(monkeypatch, tmp_path)
     monkeypatch.chdir(tmp_path)
     cli_args = ["--config_file", str(tmp_path / "nonexistent.yaml")]
 
-    with pytest.raises(FileNotFoundError, match="nonexistent.yaml"):
+    with pytest.raises(FileNotFoundError, match=r"nonexistent\.yaml"):
         args_handler(cli_args)
 
 

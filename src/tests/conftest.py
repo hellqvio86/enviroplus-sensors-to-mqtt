@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from enviroplussensorstomqtt.hardware import GasReadings, NoiseReadings, PMReadings
+from enviroplussensorstomqtt.hardware import GasReadings, LightReadings, NoiseReadings, PMReadings
 
 
 class FakeHardware:
@@ -66,6 +66,11 @@ class FakeHardware:
             pm25=self.pm[1],
             pm10=self.pm[2],
         )
+
+    def read_light(self) -> LightReadings:
+        if getattr(self, "fail_light", False):
+            raise RuntimeError("LTR559 read error")
+        return LightReadings(lux=120.5, proximity=42)
 
     def close(self) -> None:
         self.closed = True

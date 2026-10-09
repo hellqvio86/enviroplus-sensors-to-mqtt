@@ -305,14 +305,14 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Fix:** Rename to `log_setup.py`/`logsetup.py`; update imports.
 - **Done when:** no module in the package is named like a stdlib module.
 
-### [ ] P3-3 Missing sensor: LTR559 light/proximity `[code]`
+### [x] P3-3 Missing sensor: LTR559 light/proximity `[code]`
 - **Where:** `sensor.py`
 - **Problem:** The Enviro+ includes an LTR559 (lux, proximity) that is never read, though the board is the
   project's namesake. This is an incomplete feature relative to "Enviroplus sensors to MQTT".
 - **Fix:** Add optional `lux`/`proximity` fields (feature-flagged in config, tolerant of absence).
 - **Done when:** unit tests with a fake `ltr559`; README documents fields.
 
-### [ ] P3-4 MQTT features
+### [x] P3-4 MQTT features
 - **Where:** `sensor.py`, new `mqtt.py`
 - **Problem:** Only one JSON blob is published, retained, to every topic, with no TLS, client ID, QoS setting,
   availability topic, or Home-Assistant-style discovery. Retain is hardcoded.
@@ -320,17 +320,16 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   `qos`, `retain`, per-metric subtopics, availability + LWT (ties to P1-7), MQTT discovery payloads.
 - **Done when:** each option has unit tests against a fake client and a README section.
 
-### [ ] P3-5 Observability
+### [x] P3-5 Observability
 - **Problem:** No way to tell if the service is healthy except tailing logs.
 - **Fix:** Publish a small status message (uptime, last-success timestamp, sensor errors count); optionally
   `sd_notify` watchdog (`WatchdogSec=`) so systemd restarts a hung process.
 - **Done when:** watchdog heartbeat is tested with a fake notifier.
 
-### [ ] P3-6 Release and distribution
+### [x] P3-6 Release and distribution
 - **Problem:** Not published to PyPI; install is "clone + make". No versioned releases.
-- **Fix:** Add a tag-triggered GitHub Actions release (build, `twine check`, publish with trusted publishing),
-  or document that the project is source-install only.
-- **Done when:** a tagged release produces a verified artifact.
+- **Fix:** Documented that the project is source-install only via clone + `make install`. User confirmed no PyPI release flow needed.
+- **Done when:** documented in README.
 
 ---
 

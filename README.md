@@ -77,6 +77,10 @@ Configuration is loaded and merged with the following precedence (highest to low
 | `interval` | `--interval` | - | `60.0` | Seconds between measurement cycles |
 | `measurements` | `--measurements` | - | `3` | Number of samples to median per cycle |
 | `temperature_offset` | `--temperature_offset` | - | `0.0` | °C offset to subtract for board self-heating |
+| `enable_ltr559` | `--disable-ltr559` | - | `true` | Enable/disable LTR559 light and proximity sensor |
+| `client_id` | - | - | `None` | Optional MQTT client ID |
+| `qos` | - | - | `1` | MQTT QoS level (0, 1, or 2) |
+| `retain` | - | - | `true` | Retain published MQTT messages |
 | `debug` | `-D`, `--debug` | - | `false` | Enable verbose debug logging |
 | `log_file` | `--log_file` | - | `None` | Optional file path for file logging |
 
@@ -94,6 +98,9 @@ topics:
 interval: 60.0
 measurements: 3
 temperature_offset: 2.5
+enable_ltr559: true
+qos: 1
+retain: true
 debug: false
 ```
 
@@ -124,6 +131,9 @@ Readings are published as a retained JSON object:
   "pm1": 2,
   "pm25": 6,
   "pm10": 9,
+  "lux": 150.25,
+  "unit_of_lux": "Lux",
+  "proximity": 38,
   "time_utc": "2026-10-09T08:30:00.000000"
 }
 ```

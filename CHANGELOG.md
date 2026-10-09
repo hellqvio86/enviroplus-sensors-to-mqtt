@@ -8,13 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added Python 3.14 support in test matrix and packaging metadata.
+- Support for LTR559 ambient light (lux) and proximity sensor (`--disable-ltr559` / `enable_ltr559`).
+- Observability status heartbeat messages (`{topic}/status`) reporting service status, cycle count, uptime, and error counter.
+- Configurable MQTT `client_id`, `qos`, and `retain` settings.
 - Temperature compensation for Enviro+ self-heating (`--temperature_offset` / `temperature_offset`).
 - Typed configuration validation using `AppConfig` dataclass to fail fast on invalid configs.
 - Environment variable support for credentials (`MQTT_HOST`, `MQTT_USERNAME`, `MQTT_PASSWORD`).
 - Last Will and Testament (LWT) status messages (`offline` / `online`) on shutdown/crash.
 - Hardware abstraction layer (`hardware.py`) decoupling hardware libraries from imports.
 - Comprehensive test suite covering configuration, args, logging, payload generation, fault isolation, and shutdown.
-- CI matrix workflow for Python 3.11, 3.12, and 3.13.
+- CI matrix workflow for Python 3.11, 3.12, 3.13, and 3.14.
 
 ### Fixed
 - All 7 Dependabot CVE vulnerability alerts resolved by upgrading `requires-python = ">=3.11"`.

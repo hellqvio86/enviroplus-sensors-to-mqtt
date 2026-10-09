@@ -125,12 +125,13 @@ def test_publish_payload(fake_mqtt):
     payload = {"temperature": 20.0, "humidity": 40.0}
     topics = ["home/living/env", "home/all/env"]
 
-    publish_payload(fake_mqtt, topics, payload)
+    publish_payload(fake_mqtt, topics, payload, qos=0, retain=False)
 
     assert len(fake_mqtt.published_messages) == 2
     assert fake_mqtt.published_messages[0]["topic"] == "home/living/env"
     assert fake_mqtt.published_messages[0]["data"]["temperature"] == 20.0
-    assert fake_mqtt.published_messages[0]["retain"] is True
+    assert fake_mqtt.published_messages[0]["qos"] == 0
+    assert fake_mqtt.published_messages[0]["retain"] is False
     assert fake_mqtt.published_messages[1]["topic"] == "home/all/env"
 
 
@@ -195,5 +196,33 @@ def test_compensate_temperature_offset_and_cpu():
     assert pytest.approx(compensate_temperature(28.0, cpu_temperature=40.0, factor=1.2), 0.01) == 18.0
     # Combined with offset
     assert pytest.approx(compensate_temperature(28.0, offset=1.0, cpu_temperature=40.0, factor=1.2), 0.01) == 17.0
+
+
+def test_read_sensors_with_ltr559(fake_hardware):
+    """Test reading LTR559 light and proximity sensor (P3-3)."""
+    readings = read_sensors(fake_hardware, measurements=1, sample_delay=0, enable_ltr559=True)
+    assert readings["lux"] == 120.5
+    assert readings["proximity"] == 42
+
+    payload = build_payload(readings)
+    assert payload["lux"] == 120.5
+    assert payload["unit_of_lux"] == "Lux"
+    assert payload["proximity"] == 42
+
+
+def test_read_sensors_ltr559_disabled_or_failing(fake_hardware, caplog):
+    """Test LTR559 failure is isolated and does not block other sensors (P3-3)."""
+    fake_hardware.fail_light = True
+    readings = read_sensors(fake_hardware, measurements=1, sample_delay=0, enable_ltr559=True)
+    assert readings["lux"] is None
+    assert readings["proximity"] is None
+    assert readings["temperature"] == 22.5
+    assert "Failed to read LTR559" in caplog.text
+
+    # Disabled
+    readings_disabled = read_sensors(fake_hardware, measurements=1, sample_delay=0, enable_ltr559=False)
+    assert "lux" not in readings_disabled
+    assert "proximity" not in readings_disabled
+
 
 

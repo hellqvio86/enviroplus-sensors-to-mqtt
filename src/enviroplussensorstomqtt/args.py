@@ -42,6 +42,11 @@ def args_handler(
         required=False,
         help="Temperature offset in °C to subtract/compensate for self-heating",
     )
+    parser.add_argument(
+        "--disable-ltr559",
+        action="store_true",
+        help="Disable LTR559 light and proximity sensor",
+    )
     parser.add_argument("-D", "--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args(argv)
 
@@ -70,6 +75,9 @@ def args_handler(
 
     if args.debug:
         config["debug"] = True
+
+    if args.disable_ltr559:
+        config["enable_ltr559"] = False
 
     if args.log_file is not None:
         config["log_file"] = args.log_file

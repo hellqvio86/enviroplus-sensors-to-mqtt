@@ -14,12 +14,16 @@ LOGGER = logging.getLogger(__name__)
 def create_mqtt_client(config: dict[str, Any]) -> mqtt.Client:
     """Create and connect a long-lived MQTT client with callbacks, LWT, and background loop."""
     host = config["host"]
-    port = config.get("port", 1883)
+    port = int(config.get("port", 1883))
     username = config.get("username")
     password = config.get("password")
+    client_id = config.get("client_id")
     topics = config.get("topics", [])
 
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    if client_id:
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
+    else:
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
     def on_connect(client: mqtt.Client, userdata: Any, flags: Any, rc: Any, properties: Any = None) -> None:
         if rc == 0:
@@ -59,9 +63,11 @@ def publish_payload(
     topics: list[str],
     payload: dict[str, Any],
     timeout: float = 10.0,
+    qos: int = 1,
+    retain: bool = True,
 ) -> bool:
     """
-    Publish JSON payload to all topics with QoS 1, retain=True.
+    Publish JSON payload to all topics with configurable QoS and retain.
 
     Returns:
         bool: True if published successfully to all topics, False otherwise.
@@ -71,7 +77,7 @@ def publish_payload(
 
     for topic in topics:
         LOGGER.info("Publishing msg to topic %s: %s", topic, data.decode("utf-8"))
-        msg_info = mqtt_client.publish(topic=topic, payload=data, qos=1, retain=True)
+        msg_info = mqtt_client.publish(topic=topic, payload=data, qos=qos, retain=retain)
         if hasattr(msg_info, "wait_for_publish"):
             try:
                 msg_info.wait_for_publish(timeout=timeout)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import signal
 import threading
@@ -58,6 +59,8 @@ def run_service(
     LOGGER.info("Starting Enviroplus Sensors to MQTT (interval: %ss, measurements: %s)", interval, measurements)
 
     cycle_count = 0
+    error_count = 0
+    service_start = time.monotonic()
     try:
         while not stop_event.is_set():
             cycle_start = time.monotonic()
@@ -65,10 +68,29 @@ def run_service(
 
             try:
                 offset = float(config.get("temperature_offset", 0.0))
-                readings = read_sensors(hw, measurements=measurements, temperature_offset=offset)
+                enable_ltr = bool(config.get("enable_ltr559", True))
+                readings = read_sensors(
+                    hw,
+                    measurements=measurements,
+                    temperature_offset=offset,
+                    enable_ltr559=enable_ltr,
+                )
                 payload = build_payload(readings)
-                publish_payload(client, topics, payload)
+                qos = int(config.get("qos", 1))
+                retain = bool(config.get("retain", True))
+                publish_payload(client, topics, payload, qos=qos, retain=retain)
+
+                # Observability heartbeat (P3-5)
+                for topic in topics:
+                    status_payload = {
+                        "status": "online",
+                        "cycle": cycle_count,
+                        "uptime_seconds": round(time.monotonic() - service_start, 1),
+                        "errors": error_count,
+                    }
+                    client.publish(f"{topic}/status", json.dumps(status_payload), qos=qos, retain=True)
             except Exception as exc:
+                error_count += 1
                 LOGGER.exception("Unexpected error in sensor cycle: %s", exc)
 
             if max_cycles is not None and cycle_count >= max_cycles:

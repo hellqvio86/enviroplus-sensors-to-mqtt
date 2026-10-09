@@ -59,6 +59,7 @@ def read_sensors(
     measurements: int = 3,
     sample_delay: float = 1.0,
     temperature_offset: float = 0.0,
+    enable_ltr559: bool = True,
 ) -> dict[str, float | None]:
     """
     Read all sensor groups from hardware with fault isolation.
@@ -74,6 +75,8 @@ def read_sensors(
     noise_low, noise_mid, noise_high, noise_amp = [], [], [], []
     gas_ox, gas_red, gas_nh3 = [], [], []
     pm1, pm25, pm10 = [], [], []
+    lux_readings: list[float] = []
+    proximity_readings: list[int] = []
 
     has_temp_err = False
     has_hum_err = False
@@ -81,6 +84,7 @@ def read_sensors(
     has_noise_err = False
     has_gas_err = False
     has_pm_err = False
+    has_light_err = not enable_ltr559
 
     for i in range(measurements):
         if not has_temp_err:
@@ -135,6 +139,15 @@ def read_sensors(
                 LOGGER.warning("Failed to read particulate matter from PMS5003 sensor: %s", exc)
                 has_pm_err = True
 
+        if not has_light_err and hasattr(hardware, "read_light"):
+            try:
+                light = hardware.read_light()
+                lux_readings.append(light.lux)
+                proximity_readings.append(light.proximity)
+            except Exception as exc:
+                LOGGER.warning("Failed to read LTR559 light/proximity sensor: %s", exc)
+                has_light_err = True
+
         if i < measurements - 1 and sample_delay > 0:
             sleep(sample_delay)
 
@@ -155,6 +168,10 @@ def read_sensors(
     readings["pm1"] = median(pm1) if pm1 else None
     readings["pm25"] = median(pm25) if pm25 else None
     readings["pm10"] = median(pm10) if pm10 else None
+
+    if enable_ltr559:
+        readings["lux"] = median(lux_readings) if lux_readings else None
+        readings["proximity"] = median(proximity_readings) if proximity_readings else None
 
     return readings
 
@@ -197,6 +214,14 @@ def build_payload(
         "pm25": _round_int(readings.get("pm25")),
         "time_utc": timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f"),
     }
+
+    if "lux" in readings:
+        payload["lux"] = _round_float(readings.get("lux"), 2)
+        payload["unit_of_lux"] = "Lux"
+
+    if "proximity" in readings:
+        payload["proximity"] = _round_int(readings.get("proximity"))
+
     return payload
 
 
@@ -211,6 +236,7 @@ def send_sensor_data(
     """Read sensor data from Enviro+ hardware and publish to MQTT."""
     topics = config.get("topics", [])
     offset = float(config.get("temperature_offset", 0.0))
+    enable_ltr = bool(config.get("enable_ltr559", True))
 
     if mqtt_client is not None:
         client = mqtt_client
@@ -231,6 +257,7 @@ def send_sensor_data(
         measurements=measurements,
         sample_delay=sample_delay,
         temperature_offset=offset,
+        enable_ltr559=enable_ltr,
     )
     payload = build_payload(readings)
 

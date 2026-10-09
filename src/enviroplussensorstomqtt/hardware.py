@@ -27,6 +27,11 @@ class NoiseReadings(NamedTuple):
     amp: float
 
 
+class LightReadings(NamedTuple):
+    lux: float
+    proximity: int
+
+
 class HardwareInterface(Protocol):
     """Protocol defining hardware operations for Enviro+ sensors."""
 
@@ -36,6 +41,7 @@ class HardwareInterface(Protocol):
     def read_noise(self) -> NoiseReadings: ...
     def read_gas(self) -> GasReadings: ...
     def read_pm(self) -> PMReadings: ...
+    def read_light(self) -> LightReadings: ...
     def close(self) -> None: ...
 
 
@@ -49,6 +55,7 @@ class EnviroPlusHardware:
         self._noise = None
         self._gas = None
         self._pms5003 = None
+        self._ltr559 = None
 
     def get_bme280(self):
         """Lazily initialize BME280 sensor."""
@@ -86,6 +93,18 @@ class EnviroPlusHardware:
 
             self._pms5003 = PMS5003()
         return self._pms5003
+
+    def get_ltr559(self):
+        """Lazily initialize LTR559 light and proximity sensor."""
+        if self._ltr559 is None:
+            try:
+                from ltr559 import LTR559
+
+                self._ltr559 = LTR559()
+            except Exception as exc:
+                LOGGER.debug("LTR559 sensor not available: %s", exc)
+                return None
+        return self._ltr559
 
     def read_temperature(self) -> float:
         """Read temperature in Celsius."""
@@ -129,6 +148,16 @@ class EnviroPlusHardware:
             pm10=float(raw.pm_ug_per_m3(10)),
         )
 
+    def read_light(self) -> LightReadings:
+        """Read lux and proximity from LTR559."""
+        ltr = self.get_ltr559()
+        if ltr is None:
+            raise RuntimeError("LTR559 sensor not initialized")
+        ltr.update_sensor()
+        lux = float(ltr.get_lux())
+        proximity = int(ltr.get_proximity())
+        return LightReadings(lux=lux, proximity=proximity)
+
     def close(self) -> None:
         """Release hardware handles."""
         if self._bus is not None and hasattr(self._bus, "close"):
@@ -141,3 +170,4 @@ class EnviroPlusHardware:
         self._noise = None
         self._gas = None
         self._pms5003 = None
+        self._ltr559 = None

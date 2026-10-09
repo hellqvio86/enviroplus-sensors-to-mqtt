@@ -29,6 +29,8 @@ class FakeHardware:
         self.gas = gas
         self.pm = pm
         self.closed = False
+        self.fail_pm = False
+        self.fail_gas = False
 
     def read_temperature(self) -> float:
         return self.temperature
@@ -48,6 +50,8 @@ class FakeHardware:
         )
 
     def read_gas(self) -> GasReadings:
+        if self.fail_gas:
+            raise RuntimeError("I2C read failure on MICS6814 gas sensor")
         return GasReadings(
             oxidising=self.gas[0],
             reducing=self.gas[1],
@@ -55,6 +59,8 @@ class FakeHardware:
         )
 
     def read_pm(self) -> PMReadings:
+        if self.fail_pm:
+            raise TimeoutError("PMS5003 read timeout")
         return PMReadings(
             pm1=self.pm[0],
             pm25=self.pm[1],
@@ -65,6 +71,17 @@ class FakeHardware:
         self.closed = True
 
 
+class FakeMessageInfo:
+    """Fake MQTTMessageInfo returned by publish()."""
+
+    def __init__(self, rc: int = 0) -> None:
+        self.rc = rc
+
+    def wait_for_publish(self, timeout: float | None = None) -> None:
+        if self.rc != 0:
+            raise RuntimeError(f"Publish failed with code {self.rc}")
+
+
 class FakeMQTTClient:
     """Fake MQTT client recording interactions."""
 
@@ -72,6 +89,11 @@ class FakeMQTTClient:
         self.credentials: tuple[str, str | None] | None = None
         self.connected_to: tuple[str, int, int] | None = None
         self.published_messages: list[dict[str, Any]] = []
+        self.loop_started: bool = False
+        self.loop_stopped: bool = False
+        self.disconnected: bool = False
+        self.will: tuple[str, str, int, bool] | None = None
+        self.rc_for_publish: int = 0
 
     def username_pw_set(self, username: str, password: str | None = None) -> None:
         self.credentials = (username, password)
@@ -80,15 +102,36 @@ class FakeMQTTClient:
         self.connected_to = (host, port, keepalive)
         return 0
 
-    def publish(self, topic: str, payload: bytes | str, retain: bool = False) -> Any:
+    def will_set(self, topic: str, payload: str, qos: int = 0, retain: bool = False) -> None:
+        self.will = (topic, payload, qos, retain)
+
+    def loop_start(self) -> None:
+        self.loop_started = True
+
+    def loop_stop(self) -> None:
+        self.loop_stopped = True
+
+    def is_connected(self) -> bool:
+        return self.connected_to is not None and not self.disconnected
+
+    def disconnect(self) -> None:
+        self.disconnected = True
+
+    def publish(self, topic: str, payload: bytes | str, qos: int = 0, retain: bool = False) -> FakeMessageInfo:
         raw_payload = payload.decode("utf-8") if isinstance(payload, bytes) else payload
+        try:
+            data = json.loads(raw_payload)
+        except Exception:
+            data = raw_payload
+
         self.published_messages.append({
             "topic": topic,
             "raw": raw_payload,
-            "data": json.loads(raw_payload),
+            "data": data,
+            "qos": qos,
             "retain": retain,
         })
-        return self
+        return FakeMessageInfo(rc=self.rc_for_publish)
 
 
 @pytest.fixture

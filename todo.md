@@ -53,7 +53,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** `setup_logger(debug=True)` succeeds with no `log_file`; test with an unwritable path logs a
   warning and does not raise.
 
-### [ ] P0-4 Any exception kills the service; there is no error handling in the main loop `[code]`
+### [x] P0-4 Any exception kills the service; there is no error handling in the main loop `[code]`
 - **Where:** `main.py:34-47`, `sensor.py:23-42, 158-166`
 - **Problem:** `send_sensor_data` can raise on I2C errors, `PMS5003` timeouts (the retry inside
   `read_pms5003` is itself unguarded), DNS/connection failures from `mqtt_client.connect`, etc. Nothing in
@@ -65,7 +65,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** tests inject a failing PMS5003 and a failing `connect`; the loop survives, other sensors'
   values are still published, and the failure is logged.
 
-### [ ] P0-5 Hardware handles and the MQTT client are created every cycle and never released `[code]` `[hw]`
+### [x] P0-5 Hardware handles and the MQTT client are created every cycle and never released `[code]` `[hw]`
 - **Where:** `sensor.py:68-71, 136`, `main.py:36`
 - **Problem:** Every cycle creates a new `SMBus(1)`, `BME280`, `Noise`, `PMS5003`, and a new
   `mqtt.Client`. None are closed (`SMBus.close()`, serial/GPIO release, `mqtt_client.disconnect()`).
@@ -77,7 +77,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** unit test with fakes asserts each opened resource is closed exactly once on both success and
   failure paths; a long-run check on a Pi (human) shows stable FD count (`ls /proc/<pid>/fd | wc -l`).
 
-### [ ] P0-6 MQTT publish is fire-and-forget with no loop, no result check, no disconnect `[code]`
+### [x] P0-6 MQTT publish is fire-and-forget with no loop, no result check, no disconnect `[code]`
 - **Where:** `sensor.py:158-168`
 - **Problem:** `connect()` + `publish()` without `loop_start()/loop_forever()` or `wait_for_publish()`.
   Return codes are ignored, so "messages published" is logged even if nothing was delivered. The client never
@@ -153,7 +153,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   show the pattern), and optional warm-up discard (`discard_first_n`). Document known accuracy limits.
 - **Done when:** compensation is a pure function with unit tests; README documents the option and its caveat.
 
-### [ ] P1-6 Make the cycle time deterministic and configurable `[code]`
+### [x] P1-6 Make the cycle time deterministic and configurable `[code]`
 - **Where:** `main.py:34-47`, `sensor.py:46,75-150`
 - **Problem:** Six sensor groups x 3 samples x `sleep(1)` is at least 18 s of blocking sleeps before MQTT
   work, so readings are taken seconds apart and the cycle length is implicit. The 60 s interval and
@@ -163,7 +163,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   sensors per round) so fewer sleeps are needed; use `time.monotonic()`; enforce a minimum sleep.
 - **Done when:** tests with a fake clock verify cadence and that overrun cycles log a warning.
 
-### [ ] P1-7 Graceful shutdown and signals `[code]`
+### [x] P1-7 Graceful shutdown and signals `[code]`
 - **Where:** `main.py:34`
 - **Problem:** `while True` with no `SIGTERM`/`SIGINT` handling: `systemctl stop` kills mid-read; MQTT is never
   disconnected cleanly; retained messages stay forever with no availability signal.

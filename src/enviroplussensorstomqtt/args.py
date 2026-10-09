@@ -26,6 +26,8 @@ def args_handler(argv: list[str] | None = None, *, config_file: str | None = Non
     parser.add_argument("--topics", type=str, required=False, help="Comma-separated MQTT topics")
     parser.add_argument("--config_file", type=str, required=False, help="Path to YAML configuration file")
     parser.add_argument("--log_file", type=str, required=False, help="Path to log file")
+    parser.add_argument("--interval", type=int, required=False, help="Interval in seconds between cycles")
+    parser.add_argument("--measurements", type=int, required=False, help="Number of samples to average per cycle")
     parser.add_argument("-D", "--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args(argv)
 
@@ -57,6 +59,12 @@ def args_handler(argv: list[str] | None = None, *, config_file: str | None = Non
 
     if args.log_file is not None:
         config["log_file"] = args.log_file
+
+    if args.interval is not None:
+        config["interval"] = args.interval
+
+    if args.measurements is not None:
+        config["measurements"] = args.measurements
 
     if args.topics is not None:
         config["topics"] = [item.strip() for item in args.topics.split(",")]

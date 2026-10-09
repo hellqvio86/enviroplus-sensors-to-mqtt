@@ -121,3 +121,29 @@ def test_send_sensor_data_integration(fake_hardware, fake_mqtt):
     assert len(fake_mqtt.published_messages) == 1
     assert fake_mqtt.published_messages[0]["topic"] == "sensors/test"
     assert payload["temperature"] == 22.5
+
+
+def test_read_sensors_failing_pm_isolated(fake_hardware, caplog):
+    """Test PMS5003 failure does not crash read_sensors and other readings are retained (P0-4)."""
+    fake_hardware.fail_pm = True
+    readings = read_sensors(fake_hardware, measurements=1, sample_delay=0)
+
+    assert readings["pm1"] is None
+    assert readings["pm25"] is None
+    assert readings["pm10"] is None
+    assert readings["temperature"] == 22.5
+    assert readings["humidity"] == 45.0
+    assert "Failed to read particulate matter" in caplog.text
+
+
+def test_read_sensors_failing_gas_isolated(fake_hardware, caplog):
+    """Test gas sensor failure does not crash read_sensors (P0-4)."""
+    fake_hardware.fail_gas = True
+    readings = read_sensors(fake_hardware, measurements=1, sample_delay=0)
+
+    assert readings["gas_oxidising"] is None
+    assert readings["gas_reducing"] is None
+    assert readings["gas_nh3"] is None
+    assert readings["temperature"] == 22.5
+    assert "Failed to read gas concentrations" in caplog.text
+

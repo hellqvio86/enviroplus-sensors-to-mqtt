@@ -12,6 +12,8 @@ def get_default_config() -> dict[str, Any]:
         "debug": False,
         "port": 1883,
         "log_file": None,
+        "interval": 60,
+        "measurements": 3,
     }
 
 
@@ -42,5 +44,7 @@ def parse_config(config_file: str | None = None) -> dict[str, Any]:
     config.setdefault("debug", False)
     config.setdefault("port", 1883)
     config.setdefault("log_file", None)
+    config.setdefault("interval", 60)
+    config.setdefault("measurements", 3)
 
     return config

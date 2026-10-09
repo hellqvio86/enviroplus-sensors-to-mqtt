@@ -1,4 +1,5 @@
-"""
-Enviroplus sensors to MQTT
-"""
-from .main import main as main
+"""Enviroplus sensors to MQTT."""
+
+__version__ = "0.0.2"
+
+__all__ = ["__version__"]

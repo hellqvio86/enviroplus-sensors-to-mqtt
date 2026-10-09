@@ -1,6 +1,10 @@
+"""Basic package smoke tests."""
+
 import enviroplussensorstomqtt
 
 
-def test_imports():
+def test_package_metadata():
+    """Test package version and basic import integrity."""
     assert enviroplussensorstomqtt is not None
-    assert hasattr(enviroplussensorstomqtt, "main")
+    assert hasattr(enviroplussensorstomqtt, "__version__")
+    assert enviroplussensorstomqtt.__version__ == "0.0.2"

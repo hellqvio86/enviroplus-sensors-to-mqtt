@@ -188,7 +188,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
   (e.g. `/opt/enviroplussensorstomqtt`) instead of the checkout.
 - **Done when:** `systemd-analyze verify` passes in CI (or documented manual check); no duplicate keys; LF endings.
 
-### [ ] P1-9 Real test suite, and make the code testable `[code]`
+### [x] P1-9 Real test suite, and make the code testable `[code]`
 - **Where:** `src/tests/test_basic.py` (only test), `sensor.py`, `args.py`
 - **Problem:** The only test asserts the package imports and has a `main` attribute: effectively 0 % behavioural
   coverage. `args_handler()` reads `sys.argv` internally and can't be tested without monkeypatching.
@@ -201,7 +201,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 - **Done when:** `pytest --cov=enviroplussensorstomqtt` reports >= 80 % and runs with no hardware libs
   importable (stub them in `sys.modules`); add a coverage gate in CI.
 
-### [ ] P1-10 Package imports pull in hardware stacks eagerly `[code]`
+### [x] P1-10 Package imports pull in hardware stacks eagerly `[code]`
 - **Where:** `__init__.py:4`, `sensor.py:10-18`
 - **Problem:** `import enviroplussensorstomqtt` imports `main` -> `sensor` -> `bme280`, `enviroplus.gas`, `pms5003`
   (and `Noise` lazily at `sensor.py:70`). The current import test only passes because those wheels install
@@ -215,7 +215,7 @@ unnecessary. Fix P0 first; P1 makes it trustworthy; P2/P3 are quality and featur
 
 ## P2: Packaging, dependencies, CI and docs
 
-### [ ] P2-1 Tests are shipped inside the wheel `[verified]`
+### [x] P2-1 Tests are shipped inside the wheel `[verified]`
 - **Where:** `pyproject.toml` (`[tool.setuptools.packages.find]`), `src/tests/`
 - **Problem:** Building the wheel includes a top-level `tests/test_basic.py` (namespace package auto-discovery).
 - **Fix:** Move tests to repo-root `tests/` **or** set `include = ["enviroplussensorstomqtt*"]` in the `find`

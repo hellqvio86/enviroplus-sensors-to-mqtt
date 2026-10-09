@@ -1,168 +1,171 @@
-"""
-Sensor module
-"""
+"""Sensor reading and MQTT publishing module."""
+
+from __future__ import annotations
+
 import datetime
 import json
 import logging
 from statistics import median
 from time import sleep
+from typing import Any, Callable
 
-from bme280 import BME280
-from enviroplus import gas
 from paho.mqtt.client import Client as MqttClient
-from pms5003 import PMS5003, ReadTimeoutError
 
-try:
-    from smbus2 import SMBus
-except ImportError:
-    from smbus import SMBus
+from .hardware import EnviroPlusHardware, HardwareInterface
 
 LOGGER = logging.getLogger(__name__)
 
 
-def read_pms5003(pms5003: PMS5003) -> dict:
-    """
-    Read values from PMS5003 particle sensor and return as dict.
+def sample_median(func: Callable[[], float], n: int = 3, delay: float = 1.0) -> float:
+    """Take n samples calling func with a delay between them, returning the median."""
+    samples: list[float] = []
+    for i in range(n):
+        samples.append(func())
+        if i < n - 1 and delay > 0:
+            sleep(delay)
+    return median(samples)
 
-    :param pms5003: An initialised PMS5003 sensor instance.
-    :return: Dictionary with pm1, pm25, pm10 keys.
-    """
-    values = {}
-    try:
-        pm_values = pms5003.read()
-        values["pm1"] = pm_values.pm_ug_per_m3(1)
-        values["pm25"] = pm_values.pm_ug_per_m3(2.5)
-        values["pm10"] = pm_values.pm_ug_per_m3(10)
-    except ReadTimeoutError:
-        pms5003.reset()
-        pm_values = pms5003.read()
-        values["pm1"] = pm_values.pm_ug_per_m3(1)
-        values["pm25"] = pm_values.pm_ug_per_m3(2.5)
-        values["pm10"] = pm_values.pm_ug_per_m3(10)
-    return values
+
+def read_sensors(
+    hardware: HardwareInterface,
+    measurements: int = 3,
+    sample_delay: float = 1.0,
+) -> dict[str, float]:
+    """Read all sensor groups from hardware and return median values."""
+    readings: dict[str, float] = {}
+
+    # Temperature, Humidity, Pressure
+    readings["temperature"] = sample_median(hardware.read_temperature, n=measurements, delay=sample_delay)
+    readings["humidity"] = sample_median(hardware.read_humidity, n=measurements, delay=sample_delay)
+    readings["pressure"] = sample_median(hardware.read_pressure, n=measurements, delay=sample_delay)
+
+    # Noise profile
+    noise_low: list[float] = []
+    noise_mid: list[float] = []
+    noise_high: list[float] = []
+    noise_amp: list[float] = []
+    for i in range(measurements):
+        n = hardware.read_noise()
+        noise_low.append(n.low)
+        noise_mid.append(n.mid)
+        noise_high.append(n.high)
+        noise_amp.append(n.amp)
+        if i < measurements - 1 and sample_delay > 0:
+            sleep(sample_delay)
+
+    readings["noise_low"] = median(noise_low)
+    readings["noise_mid"] = median(noise_mid)
+    readings["noise_high"] = median(noise_high)
+    readings["noise_amp"] = median(noise_amp)
+
+    # Gas
+    gas_ox: list[float] = []
+    gas_red: list[float] = []
+    gas_nh3: list[float] = []
+    for i in range(measurements):
+        g = hardware.read_gas()
+        gas_ox.append(g.oxidising)
+        gas_red.append(g.reducing)
+        gas_nh3.append(g.nh3)
+        if i < measurements - 1 and sample_delay > 0:
+            sleep(sample_delay)
+
+    readings["gas_oxidising"] = median(gas_ox)
+    readings["gas_reducing"] = median(gas_red)
+    readings["gas_nh3"] = median(gas_nh3)
+
+    # Particulate matter
+    pm1: list[float] = []
+    pm25: list[float] = []
+    pm10: list[float] = []
+    for i in range(measurements):
+        pm = hardware.read_pm()
+        pm1.append(pm.pm1)
+        pm25.append(pm.pm25)
+        pm10.append(pm.pm10)
+        if i < measurements - 1 and sample_delay > 0:
+            sleep(sample_delay)
+
+    readings["pm1"] = median(pm1)
+    readings["pm25"] = median(pm25)
+    readings["pm10"] = median(pm10)
+
+    return readings
+
+
+def build_payload(
+    readings: dict[str, float],
+    timestamp: datetime.datetime | None = None,
+) -> dict[str, Any]:
+    """Construct MQTT JSON payload preserving all documented keys and units."""
+    if timestamp is None:
+        timestamp = datetime.datetime.now(datetime.timezone.utc)
+
+    payload: dict[str, Any] = {
+        "temperature": readings.get("temperature"),
+        "unit_of_temperature": "C",
+        "humidity": readings.get("humidity"),
+        "unit_of_humidity": "%",
+        "pressure": readings.get("pressure"),
+        "unit_of_pressure": "mbar",
+        "noise_low": readings.get("noise_low"),
+        "noise_mid": readings.get("noise_mid"),
+        "noise_high": readings.get("noise_high"),
+        "noise_amp": readings.get("noise_amp"),
+        "gas_oxidising": readings.get("gas_oxidising"),
+        "unit_of_gas_oxidising": "Ohms",
+        "gas_reducing": readings.get("gas_reducing"),
+        "unit_of_gas_reducing": "Ohms",
+        "gas_nh3": readings.get("gas_nh3"),
+        "unit_of_gas_nh3": "Ohms",
+        "pm1": readings.get("pm1"),
+        "pm10": readings.get("pm10"),
+        "pm25": readings.get("pm25"),
+        "time_utc": timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f"),
+    }
+    return payload
+
+
+def publish_payload(
+    mqtt_client: MqttClient,
+    topics: list[str],
+    payload: dict[str, Any],
+) -> None:
+    """Encode payload to JSON and publish to each topic."""
+    data = json.dumps(payload).encode("utf-8")
+    for topic in topics:
+        LOGGER.info("Publishing msg: %s to topic: %s", data.decode("utf-8"), topic)
+        mqtt_client.publish(topic=topic, payload=data, retain=True)
+    LOGGER.info("messages published")
 
 
 def send_sensor_data(
-    *, config: dict, mqtt_client: MqttClient, measurements: int = 3
-) -> None:
-    """
-    Read sensor data from Enviro+ and publish to MQTT broker.
-
-    Takes median readings of temperature, humidity, pressure, noise,
-    gas, and particulate matter, then publishes the results to each
-    topic in the config as a JSON-encoded string.
-
-    :param config: Configuration dict with host, port, username, password, topics.
-    :param mqtt_client: An initialised paho MQTT client instance.
-    :param measurements: Number of readings to take the median of.
-    :return: None
-    """
-    msg = {}
-
+    *,
+    config: dict[str, Any],
+    mqtt_client: MqttClient,
+    hardware: HardwareInterface | None = None,
+    measurements: int = 3,
+    sample_delay: float = 1.0,
+) -> dict[str, Any]:
+    """Read sensor data from Enviro+ hardware and publish to MQTT."""
     host = config["host"]
-    username = config["username"]
-    password = config["password"]
     port = config["port"]
+    username = config.get("username")
+    password = config.get("password")
     topics = config["topics"]
 
-    bus = SMBus(1)
-    device_bme280 = BME280(i2c_dev=bus)
-    from enviroplus.noise import Noise
-    noise = Noise()
+    hw = hardware if hardware is not None else EnviroPlusHardware()
 
-    # Take median of three readings for temperature
-    tmp = []
-    for _ in range(measurements):
-        tmp.append(device_bme280.get_temperature())
-        sleep(1)
-    msg["temperature"] = median(tmp)
-    msg["unit_of_temperature"] = "C"
-
-    # Take median of three readings for humidity
-    tmp = []
-    for _ in range(measurements):
-        tmp.append(device_bme280.get_humidity())
-        sleep(1)
-    msg["humidity"] = median(tmp)
-    msg["unit_of_humidity"] = "%"
-
-    # Take median of three readings for pressure
-    tmp = []
-    for _ in range(measurements):
-        tmp.append(device_bme280.get_pressure())
-        sleep(1)
-    msg["pressure"] = median(tmp)
-    msg["unit_of_pressure"] = "mbar"
-
-    # Noise
-    tmp_noise_low = []
-    tmp_noise_mid = []
-    tmp_noise_high = []
-    tmp_noise_amp = []
-    for _ in range(measurements):
-        noise_low, noise_mid, noise_high, noise_amp = noise.get_noise_profile()
-
-        tmp_noise_low.append(noise_low)
-        tmp_noise_mid.append(noise_mid)
-        tmp_noise_high.append(noise_high)
-        tmp_noise_amp.append(noise_amp)
-        sleep(1)
-    msg["noise_low"] = median(tmp_noise_low)
-    msg["noise_mid"] = median(tmp_noise_mid)
-    msg["noise_high"] = median(tmp_noise_high)
-    msg["noise_amp"] = median(tmp_noise_amp)
-
-    # Gas readings
-    tmp_gas_oxidising = []
-    tmp_gas_reducing = []
-    tmp_gas_nh3 = []
-
-    for _ in range(measurements):
-        gas_readings = gas.read_all()
-
-        tmp_gas_oxidising.append(gas_readings.oxidising)
-        tmp_gas_reducing.append(gas_readings.reducing)
-        tmp_gas_nh3.append(gas_readings.nh3)
-        sleep(1)
-
-    msg["gas_oxidising"] = median(tmp_gas_oxidising)
-    msg["unit_of_gas_oxidising"] = "Ohms"
-    msg["gas_reducing"] = median(tmp_gas_reducing)
-    msg["unit_of_gas_reducing"] = "Ohms"
-    msg["gas_nh3"] = median(tmp_gas_nh3)
-    msg["unit_of_gas_nh3"] = "Ohms"
-
-    # Particulate matter
-    pms5003 = PMS5003()
-    tmp_pm1 = []
-    tmp_pm10 = []
-    tmp_pm25 = []
-
-    for _ in range(measurements):
-        pmm_values = read_pms5003(pms5003)
-
-        tmp_pm1.append(pmm_values["pm1"])
-        tmp_pm10.append(pmm_values["pm10"])
-        tmp_pm25.append(pmm_values["pm25"])
-        sleep(1)
-    msg["pm1"] = median(tmp_pm1)
-    msg["pm10"] = median(tmp_pm10)
-    msg["pm25"] = median(tmp_pm25)
-
-    msg["time_utc"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")
+    readings = read_sensors(hw, measurements=measurements, sample_delay=sample_delay)
+    payload = build_payload(readings)
 
     safe_uri = f"mqtt://{host}:{port}"
+    LOGGER.info("Connecting to %s", safe_uri)
 
-    LOGGER.info(f"Connecting to {safe_uri}")
-
-    mqtt_client.username_pw_set(username, password=password)
+    if username and password:
+        mqtt_client.username_pw_set(username, password=password)
     mqtt_client.connect(host, port, 60)
+    LOGGER.info("Connected to %s", safe_uri)
 
-    LOGGER.info(f"Connected to {safe_uri}")
-
-    for topic in topics:
-        data = json.dumps(msg).encode("utf-8")
-        LOGGER.info(f"Publishing msg: {data.decode('utf-8')} to topic: {topic}")
-        mqtt_client.publish(topic=topic, payload=data, retain=True)
-
-    LOGGER.info("messages published")
+    publish_payload(mqtt_client, topics, payload)
+    return payload

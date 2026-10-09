@@ -16,7 +16,7 @@ Some system-level dependencies may be required before installing the python pack
 
 ```bash
 curl -sSL https://get.pimoroni.com/enviroplus | bash
-sudo apt install python3-psutil python3-venv python3-numpy
+sudo apt install python3-venv python3-numpy
 ```
 
 ## Requirements
@@ -78,7 +78,6 @@ password: "mqtt_password"
 topics:
   - "home/sensors/enviroplus"
 debug: false
-daemon: false
 ```
 
 ### Command Line Arguments
@@ -90,9 +89,8 @@ You can override any YAML configuration via CLI flags:
 - `--password`: MQTT password
 - `--topics`: Comma-separated list of topics
 - `--config_file`: Path to a custom YAML config file
-- `--pid_file`: Path to store the PID file (useful when daemonized)
+- `--log_file`: Path to store the log file
 - `-D, --debug`: Enable debug logging
-- `--daemon`: Run as a background daemon process
 
 ## Systemd Service
 

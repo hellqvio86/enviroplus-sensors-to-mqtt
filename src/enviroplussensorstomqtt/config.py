@@ -1,52 +1,46 @@
-"""
-Config
-"""
+"""Config module."""
+
 import os
+from typing import Any
 
 import yaml
 
 
-def parse_config(config_file: str = "config.yaml") -> dict:
+def get_default_config() -> dict[str, Any]:
+    """Return default configuration options."""
+    return {
+        "debug": False,
+        "port": 1883,
+        "log_file": None,
+    }
+
+
+def parse_config(config_file: str | None = None) -> dict[str, Any]:
     """
     Parse configuration file in YAML format.
 
     Args:
-        config_file (str, optional): Path to configuration file. Defaults to "config.yaml".
+        config_file (str, optional): Path to configuration file. If None, returns default config.
 
     Returns:
-        dict: A dictionary containing the parsed configuration values.
+        dict: A dictionary containing parsed configuration values merged with defaults.
 
     Raises:
         FileNotFoundError: If the specified config file is not found.
-
-    Examples:
-        >>> parse_config("config.yaml")
-        {
-            'host': 'mqtt.example.com',
-            'port': 1883,
-            'topics': ['sensors/enviroplus']
-        }
     """
+    config = get_default_config()
 
-    config = {}
+    if config_file is not None:
+        if not os.path.isfile(config_file):
+            raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
 
-    if not os.path.isfile(config_file):
-        raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
-
-    with open(config_file, encoding="utf-8") as stream:
-        config = yaml.safe_load(stream)
-
-        if config is None:
-            config = {}
+        with open(config_file, encoding="utf-8") as stream:
+            loaded = yaml.safe_load(stream)
+            if loaded and isinstance(loaded, dict):
+                config.update(loaded)
 
     config.setdefault("debug", False)
     config.setdefault("port", 1883)
-    config.setdefault("daemon", False)
-    config.setdefault(
-        "log_file", "/var/log/enviroplussensorstomqtt/enviroplussensorstomqtt.log"
-    )
-    config.setdefault(
-        "pid_file", "/run/enviroplussensorstomqtt/enviroplussensorstomqtt.pid"
-    )
+    config.setdefault("log_file", None)
 
     return config

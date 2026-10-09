@@ -1,8 +1,6 @@
-"""
-Main module
-"""
+"""Main module."""
+
 import logging
-import logging.handlers
 import time
 from time import sleep
 
@@ -10,11 +8,11 @@ import paho.mqtt.client as mqtt
 from setproctitle import setproctitle
 
 from .args import args_handler
-from .daemonizer import Daemonizer
-from .logging import setup_logger
+from .log_setup import setup_logger
 from .sensor import send_sensor_data
 
 LOGGER = logging.getLogger(__name__)
+
 
 def main() -> None:
     """Main function."""
@@ -22,12 +20,7 @@ def main() -> None:
 
     config = args_handler()
 
-    setup_logger(debug=config["debug"], log_file=config["log_file"], daemon=config["daemon"])
-
-    if config["daemon"]:
-        if config["debug"]:
-            print("Forking!")
-        Daemonizer(pid_file=config["pid_file"])
+    setup_logger(debug=config.get("debug", False), log_file=config.get("log_file"))
 
     LOGGER.info("Starting Enviroplus Sensors to MQTT")
 
@@ -45,6 +38,7 @@ def main() -> None:
 
         if sleep_time > 0:
             sleep(sleep_time)
+
 
 if __name__ == "__main__":
     main()

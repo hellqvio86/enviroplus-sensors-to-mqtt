@@ -1,12 +1,18 @@
 PROJECT_NAME := enviroplussensorstomqtt
-.PHONY: all venv install test clean install-service
+.PHONY: all venv install test clean install-service hooks
 all: install
 PYTHON_BIN ?= /usr/bin/python3
 
 venv:
 	uv venv --allow-existing --system-site-packages --python $(PYTHON_BIN)
 
-install: venv
+hooks:
+	@if [ -d .git ]; then \
+		git config core.hooksPath .githooks; \
+		echo "Configured git hooks path to .githooks"; \
+	fi
+
+install: venv hooks
 	uv sync --extra dev
 
 test:

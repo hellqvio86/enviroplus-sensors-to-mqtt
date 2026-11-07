@@ -1,5 +1,5 @@
 PROJECT_NAME := enviroplussensorstomqtt
-.PHONY: all venv install test clean install-service hooks
+.PHONY: all venv install test clean install-service hooks renovate renovate-summary
 all: install
 PYTHON_BIN ?= /usr/bin/python3
 
@@ -39,3 +39,9 @@ install-service:
 	@echo "Service installed successfully."
 	@echo "Enable it with: sudo systemctl enable $(PROJECT_NAME)"
 	@echo "Start it with: sudo systemctl start $(PROJECT_NAME)"
+
+renovate:
+	@./bin/renovate/run.sh
+
+renovate-summary:
+	@./bin/renovate/run.sh --summary

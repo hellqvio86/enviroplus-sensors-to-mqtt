@@ -85,3 +85,74 @@ def test_mqtt_publish_error_handling(fake_mqtt, caplog):
 
     assert success is False
     assert "Publish to test/topic failed or timed out" in caplog.text or "failed with code" in caplog.text
+
+
+def test_main_cli_entrypoint(monkeypatch):
+    """Test main() CLI entrypoint successfully delegates to run_service."""
+    from unittest.mock import MagicMock
+
+    from enviroplussensorstomqtt import main as main_mod
+
+    mock_args = MagicMock(
+        return_value={"host": "localhost", "port": 1883, "topics": ["test"], "debug": False, "log_file": None}
+    )
+    mock_run = MagicMock()
+    mock_setup = MagicMock()
+
+    monkeypatch.setattr(main_mod, "args_handler", mock_args)
+    monkeypatch.setattr(main_mod, "run_service", mock_run)
+    monkeypatch.setattr(main_mod, "setup_logger", mock_setup)
+    monkeypatch.setattr(main_mod, "setproctitle", MagicMock())
+
+    main_mod.main()
+    mock_args.assert_called_once_with(validate=True)
+    mock_setup.assert_called_once_with(debug=False, log_file=None)
+    mock_run.assert_called_once()
+
+
+def test_main_validation_error_exits(monkeypatch):
+    """Test main() exits with code 1 when args_handler raises ValueError."""
+    from unittest.mock import MagicMock
+
+    import pytest
+
+    from enviroplussensorstomqtt import main as main_mod
+
+    monkeypatch.setattr(main_mod, "args_handler", MagicMock(side_effect=ValueError("Invalid config")))
+    monkeypatch.setattr(main_mod, "setproctitle", MagicMock())
+
+    with pytest.raises(SystemExit) as exc_info:
+        main_mod.main()
+    assert exc_info.value.code == 1
+
+
+def test_run_service_interval_exceeded_warning(fake_hardware, fake_mqtt, caplog):
+    """Test warning logged when cycle duration exceeds interval."""
+    import threading
+    import time
+    from unittest.mock import patch
+
+    config = {
+        "host": "localhost",
+        "port": 1883,
+        "topics": ["sensors/living"],
+        "interval": 0.001,
+        "measurements": 1,
+    }
+    stop_event = threading.Event()
+
+    with patch("time.sleep", side_effect=lambda s: None):
+
+        def slow_read(*_args, **_kwargs):
+            time.sleep(0.005)
+            return {"temp": 20.0}
+
+        with patch("enviroplussensorstomqtt.sensor.read_sensors", side_effect=slow_read):
+            run_service(
+                config=config,
+                stop_event=stop_event,
+                hardware=fake_hardware,
+                mqtt_client=fake_mqtt,
+                max_cycles=1,
+            )
+    assert "exceeding configured interval" in caplog.text or fake_hardware.closed

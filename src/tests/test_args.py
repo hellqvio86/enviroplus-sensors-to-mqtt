@@ -102,3 +102,70 @@ def test_args_handler_tls_and_ha_options(monkeypatch, tmp_path):
     assert config["ha_discovery"] is True
     assert config["ha_discovery_prefix"] == "homeassistant"
     assert config["device_id"] == "my_enviro"
+
+
+def test_args_handler_additional_options(monkeypatch, tmp_path):
+    """Test disable_ltr559, log_file, interval, measurements, temp offset, tls certs."""
+    monkeypatch.chdir(tmp_path)
+    cli_args = [
+        "--host",
+        "localhost",
+        "--topics",
+        "sensors/env",
+        "--disable-ltr559",
+        "--log_file",
+        "/var/log/enviro.log",
+        "--interval",
+        "30.0",
+        "--measurements",
+        "5",
+        "--temperature_offset",
+        "3.2",
+        "--tls_certfile",
+        "/etc/ssl/client.crt",
+        "--tls_keyfile",
+        "/etc/ssl/client.key",
+    ]
+    config = args_handler(cli_args, validate=True)
+    assert config["enable_ltr559"] is False
+    assert config["log_file"] == "/var/log/enviro.log"
+    assert config["interval"] == 30.0
+    assert config["measurements"] == 5
+    assert config["temperature_offset"] == 3.2
+    assert config["tls_certfile"] == "/etc/ssl/client.crt"
+    assert config["tls_keyfile"] == "/etc/ssl/client.key"
+
+
+def test_args_handler_config_file_param(tmp_path):
+    """Test passing config_file as function argument."""
+    cfg = tmp_path / "custom.yaml"
+    cfg.write_text('host: custom.broker\nport: 1883\ntopics: ["test"]\n')
+    config = args_handler([], config_file=str(cfg))
+    assert config["host"] == "custom.broker"
+
+
+def test_args_handler_config_yaml_in_cwd(monkeypatch, tmp_path):
+    """Test fallback to config.yaml in current working directory."""
+    monkeypatch.chdir(tmp_path)
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text('host: cwd.broker\nport: 1883\ntopics: ["test"]\n')
+    config = args_handler([])
+    assert config["host"] == "cwd.broker"
+
+
+def test_args_handler_etc_config_fallback(monkeypatch, tmp_path):
+    """Test fallback to /etc/enviroplussensorstomqtt.yaml when config.yaml is absent."""
+    monkeypatch.chdir(tmp_path)
+    import os
+
+    def fake_isfile(path):
+        return path == "/etc/enviroplussensorstomqtt.yaml"
+
+    with monkeypatch.context() as m:
+        m.setattr(os.path, "isfile", fake_isfile)
+        with monkeypatch.context() as m2:
+            import enviroplussensorstomqtt.args as a_mod
+
+            m2.setattr(a_mod, "parse_config", lambda config_file=None: {"host": "etc.broker", "topics": ["test"]})
+            config = args_handler([])
+            assert config["host"] == "etc.broker"

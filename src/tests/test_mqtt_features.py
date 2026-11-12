@@ -71,3 +71,46 @@ def test_publish_payload_per_metric_topics(fake_mqtt):
     assert "sensors/living/temperature" in topics
     assert "sensors/living/humidity" in topics
     assert "sensors/living/unit_of_temperature" not in topics
+
+
+def test_create_mqtt_client_auth_and_callbacks():
+    from unittest.mock import MagicMock
+
+    from enviroplussensorstomqtt.mqtt import disconnect_mqtt_client
+
+    config = {
+        "host": "auth.broker.local",
+        "port": 1883,
+        "username": "myuser",
+        "password": "mypassword",
+        "topics": ["sensors/test"],
+    }
+    with (
+        patch("paho.mqtt.client.Client.connect"),
+        patch("paho.mqtt.client.Client.loop_start"),
+        patch("paho.mqtt.client.Client.username_pw_set") as mock_auth,
+        patch("paho.mqtt.client.Client.will_set") as mock_will,
+    ):
+        client = create_mqtt_client(config)
+        mock_auth.assert_called_once_with("myuser", password="mypassword")
+        mock_will.assert_called_once_with("sensors/test/status", "offline", qos=1, retain=True)
+
+        # Trigger on_connect success
+        mock_publish = MagicMock()
+        client.publish = mock_publish
+        client.on_connect(client, None, None, 0)
+        mock_publish.assert_any_call("sensors/test/status", "online", qos=1, retain=True)
+
+        # Trigger on_connect failure
+        client.on_connect(client, None, None, 5)
+
+        # Trigger on_disconnect non-zero and zero
+        client.on_disconnect(client, None, None, 1)
+        client.on_disconnect(client, None, None, 0)
+
+        # Disconnect test with error handling
+        bad_client = MagicMock()
+        bad_client.publish.side_effect = RuntimeError("publish error")
+        bad_client.disconnect.side_effect = RuntimeError("disconnect error")
+        bad_client.loop_stop.side_effect = RuntimeError("loop error")
+        disconnect_mqtt_client(bad_client, topics=["sensors/test"])

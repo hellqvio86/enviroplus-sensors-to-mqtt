@@ -105,7 +105,7 @@ jobs:
         run: uv run ruff format --check src .github/scripts
 
       - name: Run Pytest with Coverage
-        run: uv run pytest --cov=enviroplussensorstomqtt src/tests/
+        run: uv run pytest --cov=enviroplussensorstomqtt --cov-fail-under=80 src/tests/
 
       - name: Build Distribution Packages
         run: uv build

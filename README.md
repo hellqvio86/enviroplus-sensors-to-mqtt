@@ -38,6 +38,32 @@ sudo apt-get install -y python3-dev gcc i2c-tools cmake libffi-dev libopenblas0
 
 ## Installation & Setup
 
+### 1. Fast Installation via `pipx` or `uv` (Recommended)
+
+`enviroplussensorstomqtt` can be installed in an isolated environment or executed on the fly without cloning the source repository:
+
+#### Using `pipx`:
+```bash
+# Install as an isolated CLI command
+pipx install enviroplussensorstomqtt
+
+# Or run directly on the fly
+pipx run enviroplussensorstomqtt --help
+```
+
+#### Using `uv`:
+```bash
+# Install globally into an isolated tool environment
+uv tool install enviroplussensorstomqtt
+
+# Or run directly on the fly via uvx
+uvx enviroplussensorstomqtt --help
+```
+
+---
+
+### 2. Developer / Git Installation
+
 We recommend using [uv](https://github.com/astral-sh/uv) for fast, deterministic installs:
 
 ```bash

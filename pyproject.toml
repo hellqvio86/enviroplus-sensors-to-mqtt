@@ -10,13 +10,12 @@ readme = "README.md"
 authors = [
   { name = "Olof Hellqvist", email = "olof.hellqvist@gmail.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Home Automation",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -36,6 +35,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/hellqvio86/enviroplus-sensors-to-mqtt"
+Repository = "https://github.com/hellqvio86/enviroplus-sensors-to-mqtt"
+Issues = "https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/issues"
 
 [project.optional-dependencies]
 tests = [

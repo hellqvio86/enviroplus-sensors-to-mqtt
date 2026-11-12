@@ -86,7 +86,8 @@ Requires Python >= 3.11 and `paho-mqtt` >= 2.0 (code uses `mqtt.CallbackAPIVersi
 - Match the surrounding docstring style in files you edit; add a short docstring to every
   new public function.
 - Commit messages: Conventional Commits (`fix:`, `feat:`, `chore:`, `test:`, `docs:`,
-  `refactor:`), one logical change per commit.
+  `refactor:`, `ci:`), one logical change per commit.
+- Git release tags: Always use Semantic Versioning with a leading `v` (e.g. `v0.1.0`, `v0.2.0`). Tags without `v` (e.g. `0.2.0`) are forbidden. CI generates draft releases based on `v<version>` from `pyproject.toml`.
 
 ## Things that will bite you
 

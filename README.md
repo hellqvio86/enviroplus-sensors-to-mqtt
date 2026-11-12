@@ -40,33 +40,98 @@ sudo apt-get install -y python3-dev gcc i2c-tools cmake libffi-dev libopenblas0
 
 ---
 
-## Installation & Setup
+## Quick Start & Installation
 
-### 1. Fast Installation via `pipx` or `uv` (Recommended)
+Choose the deployment method that fits your use case:
 
-`enviroplussensorstomqtt` can be installed in an isolated environment or executed on the fly without cloning the source repository:
+### Option 1: Instant Test (No Installation Required)
 
-#### Using `pipx`:
+Try reading and publishing sensor readings immediately from PyPI without installing files to disk:
+
 ```bash
-# Install as an isolated CLI command
-pipx install enviroplussensorstomqtt
+# Using uv (fastest):
+uvx enviroplussensorstomqtt --host 192.168.1.50 --topics home/sensors/livingroom/enviroplus
 
-# Or run directly on the fly
-pipx run enviroplussensorstomqtt --help
-```
-
-#### Using `uv`:
-```bash
-# Install globally into an isolated tool environment
-uv tool install enviroplussensorstomqtt
-
-# Or run directly on the fly via uvx
-uvx enviroplussensorstomqtt --help
+# Or using pipx:
+pipx run enviroplussensorstomqtt --host 192.168.1.50 --topics home/sensors/livingroom/enviroplus
 ```
 
 ---
 
-### 2. Developer / Git Installation
+### Option 2: Install as a User CLI Tool
+
+Install `enviroplussensorstomqtt` in an isolated virtual environment with the executable available in your `$PATH`:
+
+```bash
+# Using uv:
+uv tool install enviroplussensorstomqtt
+
+# Using pipx:
+pipx install enviroplussensorstomqtt
+```
+
+Test your installation:
+```bash
+enviroplussensorstomqtt --help
+```
+
+---
+
+### Option 3: Production Background Daemon (systemd)
+
+To run continuously in the background as a hardened, automatic `systemd` service:
+
+#### Step 1: Install the Executable to `/usr/local/bin`
+```bash
+# Method A: System-wide pipx (easiest without cloning git)
+sudo pipx install --global enviroplussensorstomqtt
+
+# Method B: From git source repository (automated)
+git clone https://github.com/hellqvio86/enviroplus-sensors-to-mqtt.git
+cd enviroplus-sensors-to-mqtt
+make install
+sudo make install-service
+```
+
+#### Step 2: Configure the Service
+Create `/etc/enviroplussensorstomqtt.yaml` with restricted permissions:
+```bash
+sudo tee /etc/enviroplussensorstomqtt.yaml > /dev/null <<'EOF'
+host: "192.168.1.50"
+port: 1883
+topics:
+  - "home/sensors/livingroom/enviroplus"
+interval: 60.0
+measurements: 3
+temperature_offset: 2.5
+enable_ltr559: true
+EOF
+
+sudo chmod 600 /etc/enviroplussensorstomqtt.yaml
+```
+
+#### Step 3: Install the systemd Service Unit
+*(Skip this step if you used `sudo make install-service` above)*
+
+```bash
+sudo curl -sSL https://raw.githubusercontent.com/hellqvio86/enviroplus-sensors-to-mqtt/main/systemd/enviroplussensorstomqtt.service -o /etc/systemd/system/enviroplussensorstomqtt.service
+```
+
+#### Step 4: Enable & Start the Service
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now enviroplussensorstomqtt
+```
+
+#### Step 5: Verify Status & Live Logs
+```bash
+sudo systemctl status enviroplussensorstomqtt
+journalctl -u enviroplussensorstomqtt -f
+```
+
+---
+
+### Developer / Local Source Installation
 
 We recommend using [uv](https://github.com/astral-sh/uv) for fast, deterministic installs:
 

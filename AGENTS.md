@@ -32,7 +32,7 @@ systemd/         unit file installed by `make install-service`
 Makefile         install / test / clean / install-service
 pyproject.toml   setuptools build, ruff config, console script `enviroplussensorstomqtt`
 uv.lock          lockfile (the Makefile does NOT currently install from it)
-.github/         CI (`make test` on Python 3.11) and Dependabot (uv ecosystem)
+.github/         CI matrix (3.11-3.15) and Dependabot (uv ecosystem)
 ```
 
 ## Commands

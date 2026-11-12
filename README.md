@@ -1,6 +1,10 @@
 # Enviroplus Sensors to MQTT
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI - Version](https://img.shields.io/pypi/v/enviroplussensorstomqtt.svg?logo=pypi&logoColor=white)](https://pypi.org/project/enviroplussensorstomqtt/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/enviroplussensorstomqtt.svg?logo=python&logoColor=white)](https://pypi.org/project/enviroplussensorstomqtt/)
+[![CI](https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/actions/workflows/ci.yml/badge.svg)](https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/actions/workflows/security.yml/badge.svg)](https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/actions/workflows/security.yml)
+[![Coverage](https://img.shields.io/badge/coverage-78%25-green.svg?logo=pytest&logoColor=white)](https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)

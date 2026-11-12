@@ -17,7 +17,7 @@ install: venv hooks
 
 test:
 	uv run ruff check .
-	uv run pytest src/tests/
+	uv run pytest --cov=enviroplussensorstomqtt src/tests/
 
 clean:
 	rm -rf .venv

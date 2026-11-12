@@ -41,9 +41,11 @@ Issues = "https://github.com/hellqvio86/enviroplus-sensors-to-mqtt/issues"
 [project.optional-dependencies]
 tests = [
     "pytest",
+    "pytest-cov",
 ]
 dev = [
     "pytest",
+    "pytest-cov",
     "ruff",
 ]
 

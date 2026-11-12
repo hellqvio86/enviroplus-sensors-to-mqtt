@@ -17,12 +17,14 @@ install: venv hooks
 
 test:
 	uv run ruff check .
-	uv run pytest --cov=enviroplussensorstomqtt --cov-fail-under=80 src/tests/
+	uv run ruff format --check src .github/scripts
+	uv run pytest --cov=enviroplussensorstomqtt --cov-fail-under=80 --cov-report=json src/tests/
+	uv run python .github/scripts/generate_coverage_badge.py
 
 clean:
 	rm -rf .venv
 	rm -rf *.egg-info
-	rm -rf dist build
+	rm -rf dist build coverage.json .coverage
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
 

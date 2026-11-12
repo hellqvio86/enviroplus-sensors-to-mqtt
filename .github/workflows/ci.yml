@@ -105,13 +105,47 @@ jobs:
         run: uv run ruff format --check src .github/scripts
 
       - name: Run Pytest with Coverage
-        run: uv run pytest --cov=enviroplussensorstomqtt --cov-fail-under=80 src/tests/
+        run: uv run pytest --cov=enviroplussensorstomqtt --cov-fail-under=80 --cov-report=json src/tests/
+
+      - name: Generate Coverage Badge
+        if: matrix.python-version == '3.11'
+        run: uv run python .github/scripts/generate_coverage_badge.py
+
+      - name: Upload coverage badge artifact
+        if: matrix.python-version == '3.11' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: coverage-badge
+          path: coverage.svg
 
       - name: Build Distribution Packages
         run: uv build
 
       - name: Check Package Metadata (Twine)
         run: uv run --with twine twine check dist/*
+
+  update-coverage-badge:
+    name: Update Coverage Badge
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download coverage badge artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: coverage-badge
+
+      - name: Commit coverage badge
+        uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842 # v5.0.1
+        with:
+          commit_message: "chore: update coverage badge [skip ci]"
+          file_pattern: coverage.svg
 
   draft-release:
     name: Create GitHub Draft Release

@@ -244,6 +244,167 @@ Readings are published as a retained JSON object:
 
 ---
 
+## Home Assistant Configuration
+
+You can integrate your Enviro+ sensor data into [Home Assistant](https://www.home-assistant.io/) either automatically via MQTT Discovery or manually using YAML.
+
+### Option A: Automatic MQTT Discovery (Recommended)
+
+Enable `ha_discovery: true` in your configuration (`/etc/enviroplussensorstomqtt.yaml` or pass `--ha_discovery` on the command line):
+
+```yaml
+topics:
+  - "home/workshop/enviroplus"
+ha_discovery: true
+ha_discovery_prefix: "homeassistant"
+device_id: "workshop_enviroplus"
+```
+
+When started, `enviroplussensorstomqtt` automatically publishes discovery configuration payloads to `<prefix>/sensor/<device_id>/.../config`. Home Assistant will immediately detect and create a device named **Enviro+ (workshop_enviroplus)** with Temperature, Humidity, Pressure, Illuminance, PM2.5, and PM10 sensors, requiring zero manual YAML edits in Home Assistant!
+
+---
+
+### Option B: Manual Configuration (`configuration.yaml`)
+
+If you have MQTT Discovery disabled or prefer explicit YAML definitions, add the following to your Home Assistant `configuration.yaml` under the modern `mqtt:` domain:
+
+```yaml
+mqtt:
+  sensor:
+    - name: "Workshop Temperature"
+      unique_id: "workshop_enviroplus_temperature"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.temperature }}"
+      unit_of_measurement: "°C"
+      device_class: "temperature"
+      state_class: "measurement"
+      suggested_display_precision: 2
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+        name: "Workshop Air Quality Monitor"
+        model: "Pimoroni Enviro+ HAT"
+        manufacturer: "Pimoroni"
+
+    - name: "Workshop Humidity"
+      unique_id: "workshop_enviroplus_humidity"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.humidity }}"
+      unit_of_measurement: "%"
+      device_class: "humidity"
+      state_class: "measurement"
+      suggested_display_precision: 2
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop Pressure"
+      unique_id: "workshop_enviroplus_pressure"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.pressure }}"
+      unit_of_measurement: "hPa"
+      device_class: "atmospheric_pressure"
+      state_class: "measurement"
+      suggested_display_precision: 1
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop Illuminance"
+      unique_id: "workshop_enviroplus_lux"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.lux }}"
+      unit_of_measurement: "lx"
+      device_class: "illuminance"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop Proximity"
+      unique_id: "workshop_enviroplus_proximity"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.proximity }}"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop PM1"
+      unique_id: "workshop_enviroplus_pm1"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.pm1 }}"
+      unit_of_measurement: "µg/m³"
+      device_class: "pm1"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop PM2.5"
+      unique_id: "workshop_enviroplus_pm25"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.pm25 }}"
+      unit_of_measurement: "µg/m³"
+      device_class: "pm25"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop PM10"
+      unique_id: "workshop_enviroplus_pm10"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.pm10 }}"
+      unit_of_measurement: "µg/m³"
+      device_class: "pm10"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop Oxidising Gas Resistance"
+      unique_id: "workshop_enviroplus_gas_oxidising"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.gas_oxidising }}"
+      unit_of_measurement: "Ω"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop Reducing Gas Resistance"
+      unique_id: "workshop_enviroplus_gas_reducing"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.gas_reducing }}"
+      unit_of_measurement: "Ω"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop NH3 Gas Resistance"
+      unique_id: "workshop_enviroplus_gas_nh3"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.gas_nh3 }}"
+      unit_of_measurement: "Ω"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+
+    - name: "Workshop Noise Amplitude"
+      unique_id: "workshop_enviroplus_noise_amp"
+      state_topic: "home/workshop/enviroplus"
+      value_template: "{{ value_json.noise_amp }}"
+      state_class: "measurement"
+      device:
+        identifiers:
+          - "workshop_enviroplus_station"
+```
+
+---
+
 ## Systemd Service Installation
 
 To install as a background service:
